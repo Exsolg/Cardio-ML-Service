@@ -1,11 +1,10 @@
-from pymongo.database import Database
+from cardio.db.db import db
 
 
 class Model:
-    def __init__(self, db:Database) -> None:
-        self.db = db
-        self.collection_name = 'models'
-        pass
+    collection_name = 'models'
 
-    def get(self, id: str) -> dict:
-        return self.db[self.collection_name].find_one({'_id': id})
+    @staticmethod
+    def get(id: str) -> dict:
+        print('GET:', db)
+        return db[Model.collection_name].find_one({'_id': id})
