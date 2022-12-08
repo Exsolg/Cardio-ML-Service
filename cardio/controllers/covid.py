@@ -1,6 +1,14 @@
-from cardio.db.models import Model
+from cardio.db import models
 
-class CovidController:
-    @staticmethod
-    def get(id: str):
-        return Model.get(id)
+
+def get(id: str):
+    return models.get(id)
+
+
+def get_list():
+    return models.get_list()
+
+
+def predict(id: str, params: dict):
+    
+    return 0
