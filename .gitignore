@@ -131,3 +131,6 @@ dmypy.json
 # idea
 .vscode
 .idea
+
+# project
+models

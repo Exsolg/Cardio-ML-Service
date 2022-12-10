@@ -23,7 +23,8 @@ model_schema = SchemaModel('model', {
             'type': 'string'
         },
         'for': {
-            'type': 'string'
+            'type': 'string',
+            'enum': ['civid', 'cabs']
         },
         'score': {
             'type': 'object',
@@ -54,5 +55,12 @@ model_schema = SchemaModel('model', {
                 }
             }
         }
+    }
+})
+
+models_schema = SchemaModel('models', {
+    'type': 'array',
+    'items': {
+        '$ref': '#/components/schemas/model'
     }
 })

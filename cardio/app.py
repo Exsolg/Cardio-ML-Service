@@ -19,7 +19,7 @@ def create_app(config):
     print(app.config['MONGO_URI'])
 
     db.init_app(app)
-    db.db = db.cx['cardio']
+    db.db = db.cx[config.MONGO_DB_NAME]
     init_repositories(db.db)
 
     api.add_namespace(cabs_api, '/cabs')
