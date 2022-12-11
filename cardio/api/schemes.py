@@ -1,66 +1,30 @@
-from flask_restx import SchemaModel
+from flask_restx import Model, fields
 
-predict_schema = SchemaModel('predict', {
-    'type': 'object',
-    'properties': {
-        'predict': {
-            'type': 'number',
-            'format': 'float',
-            'minimum': 0,
-            'maximum': 1
-        }
-    }
+predict_schema = Model('predict', {
+    'predict': fields.Float
 })
 
-model_schema = SchemaModel('model', {
-    'type': 'object',
-    'properties': {
-        'id': {
-            'type': 'string',
-            'format': 'uuid',
-        },
-        'method': {
-            'type': 'string'
-        },
-        'for': {
-            'type': 'string',
-            'enum': ['civid', 'cabs']
-        },
-        'score': {
-            'type': 'object',
-            'properties': {
-                'f1': {
-                    'type': 'number',
-                    'format': 'float',
-                    'minimum': 0,
-                    'maximum': 1
-                },
-                'recall': {
-                    'type': 'number',
-                    'format': 'float',
-                    'minimum': 0,
-                    'maximum': 1
-                },
-                'precision': {
-                    'type': 'number',
-                    'format': 'float',
-                    'minimum': 0,
-                    'maximum': 1
-                },
-                'accuracy': {
-                    'type': 'number',
-                    'format': 'float',
-                    'minimum': 0,
-                    'maximum': 1
-                }
-            }
-        }
-    }
+score_schema = Model('score', {
+        'f1':           fields.Float,
+        'recall':       fields.Float,
+        'precision':    fields.Float,
+        'accuracy':     fields.Float,
 })
 
-models_schema = SchemaModel('models', {
-    'type': 'array',
-    'items': {
-        '$ref': '#/components/schemas/model'
-    }
+
+model_schema = Model('model', {
+    'id':           fields.String(attribute='_id'),
+    'method':       fields.String,
+    'for':          fields.String,
+    'create_date':  fields.String(attribute=lambda x: None if not x.get('create_date') else x['create_date'].isoformat()),
+    'score':        fields.Nested(score_schema, skip_none=True)
+})
+
+
+models_schema = Model('models', {
+    'models': fields.List(fields.Nested(model_schema, skip_none=True))
+})
+
+error_schema = Model('error', {
+    'message': fields.String
 })

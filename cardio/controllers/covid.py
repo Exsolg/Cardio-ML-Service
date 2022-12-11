@@ -78,4 +78,4 @@ def create(model):
         logger.error(f'Database layer error: {e}')
         raise errors.InternalError(e)
 
-    return _id
+    return get(_id)
