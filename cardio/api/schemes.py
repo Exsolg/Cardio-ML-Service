@@ -1,28 +1,30 @@
 from flask_restx import Model, fields
 
 predict_schema = Model('predict', {
-    'predict': fields.Float
+    'predict': fields.Float(min=0, max=1)
 })
 
 score_schema = Model('score', {
-        'f1':           fields.Float,
-        'recall':       fields.Float,
-        'precision':    fields.Float,
-        'accuracy':     fields.Float,
+        'f1':           fields.Float(min=0, max=1),
+        'recall':       fields.Float(min=0, max=1),
+        'precision':    fields.Float(min=0, max=1),
+        'accuracy':     fields.Float(min=0, max=1),
 })
 
-
-model_schema = Model('model', {
+simple_model_schema = Model('simple_model', {
     'id':           fields.String(attribute='_id'),
     'method':       fields.String,
     'for':          fields.String,
-    'create_date':  fields.String(attribute=lambda x: None if not x.get('create_date') else x['create_date'].isoformat()),
+    'created_at':  fields.DateTime, #(attribute=lambda x: None if not x.get('create_date') else x['create_date'].isoformat()),
     'score':        fields.Nested(score_schema, skip_none=True)
 })
 
+model_schema = simple_model_schema.clone('model', {
+    'params': fields.Raw(attribute=lambda x: {i: v for i, v in x['params'].items() if v})
+})
 
 models_schema = Model('models', {
-    'models': fields.List(fields.Nested(model_schema, skip_none=True))
+    'models': fields.List(fields.Nested(simple_model_schema, skip_none=True))
 })
 
 error_schema = Model('error', {

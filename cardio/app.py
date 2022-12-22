@@ -11,7 +11,10 @@ from cardio.db.repositoryes import init_repositories
 def create_app(config):
     app = Flask(__name__)
     db = PyMongo()
-    api = Api(prefix='/v1')
+    api = Api(prefix='/v1',
+              version='1.0.0',
+              title='Cardio ML API',
+              description='The ML API for the Cardio Center project')
     
     app.config['MONGO_URI'] = f'mongodb://{config.MONGO_USER}:{config.MONGO_PASSWORD}@{config.MONGO_HOST}:{config.MONGO_PORT}/?authMechanism=DEFAULT'
     app.config['SECRET_KEY'] = config.SECRET_KEY
