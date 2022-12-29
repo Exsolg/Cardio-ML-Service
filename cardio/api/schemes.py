@@ -15,8 +15,9 @@ simple_model_schema = Model('simple_model', {
     'id':           fields.String(attribute='_id'),
     'method':       fields.String,
     'for':          fields.String,
-    'created_at':  fields.DateTime, #(attribute=lambda x: None if not x.get('create_date') else x['create_date'].isoformat()),
-    'score':        fields.Nested(score_schema, skip_none=True)
+    'created_at':   fields.DateTime,
+    'score':        fields.Nested(score_schema, skip_none=True),
+    'description':  fields.String
 })
 
 model_schema = simple_model_schema.clone('model', {

@@ -46,13 +46,19 @@ def get(id: str, _for: enums.For = None) -> dict:
         raise e
 
 
-def get_list(_for: enums.For = None) -> list:
+def get_list(page: int = None, limit: int = None, _for: enums.For = None) -> list:
     filters = {'deleted_at': None}
     if _for:
         filters['for'] = _for
+    
+    skip = None if page is None or limit is None else page * limit 
 
     try:
-        return list(get_models_repository().find(filters))
+        if limit is None and skip is None:
+            return list(get_models_repository().find(filters))
+        elif limit and skip is None:
+            return list(get_models_repository().find(filters, limit=limit))
+        return list(get_models_repository().find(filters, limit=limit, skip=skip))
     
     except Exception as e:
         logger.error(f'Error: {e}')
