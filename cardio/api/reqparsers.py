@@ -27,7 +27,7 @@ covid_predict_parser.add_argument('HBP',                        type=boolean, lo
 
 covid_model_create_parser = RequestParser()
 covid_model_create_parser.add_argument('model', required=True, type=FileStorage, location='files')
-covid_model_create_parser.add_argument('description', type=str, location='json')
+covid_model_create_parser.add_argument('description', type=str, location='form')
 
 model_list_parser = RequestParser()
 model_list_parser.add_argument('page', type=int, default=0)

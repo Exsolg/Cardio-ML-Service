@@ -51,7 +51,7 @@ def get_list(page: int = None, limit: int = None, _for: enums.For = None) -> lis
     if _for:
         filters['for'] = _for
     
-    skip = None if page is None or limit is None else page * limit 
+    skip = None if page is None or limit is None else page * limit
 
     try:
         if limit is None and skip is None:
