@@ -16,6 +16,8 @@ services:
       CARDIO_MONGO_PASSWORD: ${CARDIO_MONGO_PASSWORD:-password}
       CARDIO_HOST: 0.0.0.0
       CARDIO_SECRET_KEY: ${CARDIO_SECRET_KEY:-secret_key}
+    volumes:
+      - ./models:/app/models
     ports:
       - "127.0.0.1:${CARDIO_PORT:-8080}:80"
 
