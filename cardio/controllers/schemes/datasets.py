@@ -12,6 +12,7 @@ simple_dataset = Model('simple_dataset', {
     'dataCount':     fields.Integer,
     'modelsCount':   fields.Integer,
     'createdAt':     fields.DateTime,
+    'bestModelId':   fields.String,
     'plugins':       fields.List(fields.String),
 })
 

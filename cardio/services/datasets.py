@@ -114,7 +114,7 @@ def create(dataset: dict) -> dict:
             
         dataset = datasets_repository.get(datasets_repository.create({
             'newData': 0,
-            'bestModel': None,
+            'bestModelId': None,
             **dataset
         }))
 
@@ -254,10 +254,10 @@ def predict(dataset_id: int, samples: list[dict]) -> list[dict]:
         if not dataset:
             raise NotFoundError(f'Dataset {dataset_id} not found')
 
-        if not dataset.get('bestModel'):
+        if not dataset.get('bestModelId'):
             raise NotFoundError(f'Models not found in dataset {dataset_id}')
 
-        model = models_repository.get(dataset['bestModel'])
+        model = models_repository.get(dataset['bestModelId'])
 
         plugin = plugin_tools.get(model['plugin'])
 
@@ -300,7 +300,7 @@ def _save_model(dataset_id: str, plugin: Plugin) -> None:
     if not dataset:
         raise NotFoundError(f'Dataset {id} not found')
 
-    if not dataset.get('bestModel'):
+    if not dataset.get('bestModelId'):
         id = models_repository.create({
             'score': plugin.get_score(),
             'params': plugin.get_params(),
@@ -309,12 +309,12 @@ def _save_model(dataset_id: str, plugin: Plugin) -> None:
             'datasetId': dataset_id
         })
 
-        datasets_repository.update(dataset_id, {'bestModel': id})
+        datasets_repository.update(dataset_id, {'bestModelId': id})
         logger.info(f'New best model for dataset {dataset_id}: {id}')
 
         return
     
-    old_model = models_repository.get(dataset['bestModel'])
+    old_model = models_repository.get(dataset['bestModelId'])
     
     if (best_model_index := сompare_models_quality([old_model['score'], plugin.get_score()])) >= 0:
         if best_model_index == 1:
@@ -326,7 +326,7 @@ def _save_model(dataset_id: str, plugin: Plugin) -> None:
             'datasetId': dataset_id
             })
 
-            datasets_repository.update(dataset_id, {'bestModel': id})
+            datasets_repository.update(dataset_id, {'bestModelId': id})
             logger.info(f'New best model for dataset {dataset_id}: {id}')
     
     else:

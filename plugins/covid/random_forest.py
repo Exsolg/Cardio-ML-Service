@@ -197,18 +197,21 @@ class CovidRandomForest(Plugin):
 
         data: DataFrame = concat([df, DataFrame([{**i['sample'], **i['prediction']} for i in data])])
 
-        data.loc[data.sex == 'male', 'sex'] = 0.
+        data.loc[data.sex == 'male',   'sex'] = 0.
         data.loc[data.sex == 'female', 'sex'] = 1.
 
-        data.loc[data['severity'] == 'light',  'severity'] = 0.0
-        data.loc[data['severity'] == 'medium', 'severity'] = 1.0
-        data.loc[data['severity'] == 'severe', 'severity'] = 2.0
+        data.loc[data['severity'] == 'light',   ['severity_light', 'severity_medium', 'severity_severe']] = [1.0, 0.0, 0.0]
+        data.loc[data['severity'] == 'medium',  ['severity_light', 'severity_medium', 'severity_severe']] = [0.0, 1.0, 0.0]
+        data.loc[data['severity'] == 'severe',  ['severity_light', 'severity_medium', 'severity_severe']] = [0.0, 0.0, 1.0]
+
+        data = data.drop('severity', axis=1)
 
         data = data.astype('float64')
-        self.medians = dict(data.median().replace({nan: None}))
+        
+        self.medians = dict(data.drop(['severity_light', 'severity_medium', 'severity_severe'], axis=1).median().dropna())
+        
         data = data.fillna(self.medians)
-
-        # ТУТ если остались пустые ячейки, заполнить их чем нибудь
+        data = data.fillna(0.0)
         
         return data
 
@@ -217,13 +220,16 @@ class CovidRandomForest(Plugin):
 
         data: DataFrame = concat([df, DataFrame([{**i['sample']} for i in data])])
 
-        data.loc[data.sex == 'male', 'sex'] = 0.
+        data.loc[data.sex == 'male',   'sex'] = 0.
         data.loc[data.sex == 'female', 'sex'] = 1.
 
-        data.loc[data['severity'] == 'light',  'severity'] = 0.0
-        data.loc[data['severity'] == 'medium', 'severity'] = 1.0
-        data.loc[data['severity'] == 'severe', 'severity'] = 2.0
+        data.loc[data['severity'] == 'light',   ['severity_light', 'severity_medium', 'severity_severe']] = [1.0, 0.0, 0.0]
+        data.loc[data['severity'] == 'medium',  ['severity_light', 'severity_medium', 'severity_severe']] = [0.0, 1.0, 0.0]
+        data.loc[data['severity'] == 'severe',  ['severity_light', 'severity_medium', 'severity_severe']] = [0.0, 0.0, 1.0]
+
+        data = data.drop('severity', axis=1)
 
         data = data.fillna(self.medians)
+        data = data.fillna(0.0)
 
         return data

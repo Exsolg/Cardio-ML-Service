@@ -33,6 +33,9 @@ class Model(Resource):
                            model_schemes.models,
                            skip_none=True), HTTPStatus.OK
         
+        except NotFoundError as e:
+            return {'message': str(e)}, HTTPStatus.NOT_FOUND
+        
         except Exception as e:
             logger.debug(f'Error: {e}')
             return {'message': 'Internal Server Error'}, HTTPStatus.INTERNAL_SERVER_ERROR

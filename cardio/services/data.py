@@ -191,7 +191,7 @@ def _save_model(dataset_id: str, plugin: Plugin) -> None:
     if not dataset:
         raise NotFoundError(f'Dataset {id} not found')
 
-    if not dataset.get('bestModel'):
+    if not dataset.get('bestModelId'):
         id = models_repository.create({
             'score': plugin.get_score(),
             'params': plugin.get_params(),
@@ -200,11 +200,11 @@ def _save_model(dataset_id: str, plugin: Plugin) -> None:
             'datasetId': dataset_id
         })
 
-        datasets_repository.update(dataset_id, {'bestModel': id})
+        datasets_repository.update(dataset_id, {'bestModelId': id})
 
         return
     
-    old_model = models_repository.get(dataset['bestModel'])
+    old_model = models_repository.get(dataset['bestModelId'])
     
     if best_model_index := сompare_models_quality([old_model['score'], plugin.get_score()]) >= 0:
         if best_model_index == 1:
@@ -216,7 +216,7 @@ def _save_model(dataset_id: str, plugin: Plugin) -> None:
             'datasetId': dataset_id
             })
 
-            datasets_repository.update(dataset_id, {'bestModel': id})
+            datasets_repository.update(dataset_id, {'bestModelId': id})
     
     else:
         logger.warning(f'Failed to determine the best model for dataset {dataset_id}')

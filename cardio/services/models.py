@@ -18,7 +18,7 @@ def get(dataset_id: int, id: str) -> dict:
 
         model = models_repository.get(id)
         
-        if not model:
+        if not model or model['datasetId'] != dataset_id:
             raise NotFoundError(f'Model {id} not found in dataset {dataset_id}')
         
         plugin = plugin_tools.get(model['plugin'])
@@ -61,7 +61,7 @@ def get_list(dataset_id: int, filter: dict) -> dict:
 
         skip = (page - 1) * limit
 
-        models, total = models_repository.get_list(skip, limit, filter)
+        models, total = models_repository.get_list(skip, limit, {'datasetId': dataset_id, **filter})
 
         for model in models:
             plugin = plugin_tools.get(model['plugin'])
@@ -78,6 +78,10 @@ def get_list(dataset_id: int, filter: dict) -> dict:
             'totalElements': total
         }
     
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
+        raise e
+
     except Exception as e:
         logger.error(f'Error: {e}')
         raise InternalError(e)
@@ -92,10 +96,13 @@ def delete(dataset_id: int, id: str):
 
         model = models_repository.get(id)
         
-        if not model:
+        if not model or model['datasetId'] != dataset_id:
             raise NotFoundError(f'Model {id} not found in dataset {dataset_id}')
 
         models_repository.delete(id)
+
+        if dataset.get('bestModelId') == id:
+            datasets_repository.update(dataset_id, {'bestModelId': None})
     
     except NotFoundError as e:
         logger.info(f'NotFoundError: {e}')
@@ -115,7 +122,7 @@ def predict(dataset_id: int, id: str, samples: list[dict]) -> list[dict]:
 
         model = models_repository.get(id)
         
-        if not model:   # ТУТ проверять, что модель именно в датасете
+        if not model or model['datasetId'] != dataset_id:
             raise NotFoundError(f'Model {id} not found in dataset {dataset_id}')
 
         plugin = plugin_tools.get(model['plugin'])

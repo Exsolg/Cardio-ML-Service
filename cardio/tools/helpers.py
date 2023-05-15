@@ -1,5 +1,6 @@
 from cardio.tools.enums import Score
 from sklearn.base import BaseEstimator
+from statistics import mean
 from tqdm.contrib.itertools import product
 from tqdm.auto import tqdm
 
@@ -74,5 +75,10 @@ def _compare_two_models_quality(score1, score2):
     if Score.ACCURACY in score1 and Score.ACCURACY in score2:
         return score1[Score.ACCURACY] >= score2[Score.ACCURACY]
     
-    # ТУТ плохо, если разное количестов элементов
-    return sum(score1.values()) >= sum(score2.values())
+    if not score1:
+        return False
+    
+    if not score2:
+        return True
+    
+    return mean(score1.values()) >= mean(score2.values())

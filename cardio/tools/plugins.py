@@ -2,6 +2,9 @@ from cardio.tools.base_plugin import Plugin
 from os import walk
 from os.path import splitext, join
 from loguru import logger
+import jsonschema
+
+jsonschema.validate
 
 
 _plugins: dict[Plugin] = {}
