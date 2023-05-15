@@ -6,16 +6,16 @@ class Plugin:
     def __init__(self) -> None:
         ...
 
-    def train(self, data):
+    def train(self, data: list[dict]):
         ...
 
-    def predict(self, data) -> float:
+    def predict(self, data: list[dict]) -> list[dict]:
         ...
     
-    def get_params(self,) -> dict:
+    def get_params(self) -> dict:
         ...
     
-    def get_score(self,) -> dict:
+    def get_score(self) -> dict:
         ...
 
     def load_from_file(self, file: str) -> None:

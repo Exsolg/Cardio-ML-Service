@@ -53,10 +53,12 @@ class Test(Plugin):
         self.model = DecisionTreeClassifier(random_state=1)
         self.model.fit(x_train, y_train)
 
-    def predict(self, data) -> float:
-        ...
-    
-    def get_params(self,) -> dict:
+    def predict(self, data: list[dict]) -> list[dict]:
+        samples = self._prepare_samples(data)
+        pre = self.model.predict(samples)
+        return [{'z': int(i)} for i in pre]
+
+    def get_params(self) -> dict:
         return self.model.get_params()
     
     def get_score(self) -> dict:
@@ -84,6 +86,14 @@ class Test(Plugin):
             'x': i['sample']['x'],
             'y': i['sample']['y'],
             'z': i['prediction']['z'],
+        } for i in data]
+
+        return DataFrame(data)
+    
+    def _prepare_samples(self, data: list) -> DataFrame:
+        data = [{
+            'x': i['sample']['x'],
+            'y': i['sample']['y'],
         } for i in data]
 
         return DataFrame(data)
