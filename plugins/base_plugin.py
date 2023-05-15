@@ -1,15 +1,15 @@
 class Plugin:
     description = ''
-    scheme_train: dict = {}
-    scheme_predict: dict = {}
+    scheme_sample: dict = {}
+    scheme_prediction: dict = {}
 
     def __init__(self) -> None:
         ...
 
-    def train(self, data: scheme_train):
+    def train(self, data):
         ...
 
-    def predict(self, data: scheme_predict) -> float:
+    def predict(self, data) -> float:
         ...
     
     def get_params(self,) -> dict:

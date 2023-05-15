@@ -17,4 +17,10 @@ class Config(object):
     SECRET_KEY =            getenv('CARDIO_SECRET_KEY',         default='secret_key')
     PORT =              int(getenv('CARDIO_PORT',               default=80))
     HOST =                  getenv('CARDIO_HOST',               default='127.0.0.1')
-    DEBUG =       strtobool(getenv('CARDIO_DEBUG',              default='False'))
+    DEBUG =       strtobool(getenv('CARDIO_DEBUG',              default='false'))
+
+    MODELS_DIR =            getenv('CARDIO_MODELS_DIR',         default='models')
+    PLUGINS_DIR =           getenv('CARDIO_PLUGINS_DIR',        default='plugins')
+
+    LOG_LEVEL =             getenv('CARDIO_LOG_LEVEL',          default='info')
+    LOG_DIR =               getenv('CARDIO_LOG_DIR',            default='log')

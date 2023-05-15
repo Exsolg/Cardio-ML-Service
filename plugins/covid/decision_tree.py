@@ -14,8 +14,7 @@ class CovidDecisionTree(Plugin):
     Predicting covid-19 patient outcome using decision tree method
     '''
 
-
-    scheme_predict: dict = {
+    scheme_prediction: dict = {
         'type': 'object',
         'properties': {
             'sex': {
@@ -87,11 +86,11 @@ class CovidDecisionTree(Plugin):
     }
 
 
-    scheme_train: dict = {
+    scheme_sample: dict = {
         'type': 'array',
         'items': {
             'type': 'object',
-            'properties': dict(scheme_predict['properties'], survived={'type': 'boolean'}),
+            'properties': dict(scheme_prediction['properties'], survived={'type': 'boolean'}),
         },
     }
 
@@ -102,7 +101,7 @@ class CovidDecisionTree(Plugin):
         self.y_test = None
 
 
-    def train(self, data: scheme_train):
+    def train(self, data):
         data = self._prepare_data(data)
         x_train, x_test, y_train, y_test = train_test_split(data.drop('survived', axis=1), data['survived'], random_state=1, test_size=0.3)
 
@@ -113,7 +112,7 @@ class CovidDecisionTree(Plugin):
         self.y_test = y_test
 
 
-    def predict(self, data: scheme_predict) -> float:
+    def predict(self, data) -> float:
         return 0.5
 
 

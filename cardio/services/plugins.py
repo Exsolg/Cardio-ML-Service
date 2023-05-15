@@ -13,7 +13,7 @@ def get_list(filter: dict) -> list[dict]:
     try:
 
         filter['page'] =  filter['page']  if filter['page']  >= 1 else 1
-        filter['limit'] = filter['limit'] if filter['limit'] >= 1  else 1
+        filter['limit'] = filter['limit'] if filter['limit'] >= 1  else 10
 
         return {
             'contents': sorted([
@@ -42,10 +42,10 @@ def get(name: str) -> dict:
 
         if plugin:
             return {
-                'name':           plugin.__name__,
-                'description':    plugin.description,
-                'scheme_predict': plugin.scheme_predict,
-                'scheme_train':   plugin.scheme_train,
+                'name':              plugin.__name__,
+                'description':       plugin.description,
+                'shchemaPrediction': plugin.scheme_prediction,
+                'shchemaSample':     plugin.scheme_sample,
             }
 
     except errors.NotFoundError as e:

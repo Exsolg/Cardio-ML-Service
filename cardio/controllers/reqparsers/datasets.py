@@ -1,7 +1,14 @@
-from flask_restx.reqparse import RequestParser
+from flask_restx import Model, fields
 
 
-create_parser = RequestParser()
-create_parser.add_argument('name',        type=str, required=True)
-create_parser.add_argument('description', type=str)
-create_parser.add_argument('plugins',     type=list, required=True)
+create = Model('create_dataset', {
+    'name':  fields.String,
+    'description': fields.String,
+    'plugins': fields.List(fields.String),
+})
+
+update = Model('update_dataset', {
+    'name':  fields.String,
+    'description': fields.String,
+    'plugins': fields.List(fields.String),
+})

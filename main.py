@@ -1,6 +1,5 @@
 from config import Config
 from cardio.app import create_app
-from jsonschema import validate
 
 
 def main():

@@ -1,23 +1,23 @@
 from flask_restx import Model, fields
-from cardio.controllers.schemes.base import page_schema
+from cardio.controllers.schemes.base import page
 
 
-schema_schema = Model('schema', {
+schema = Model('schema', {
     'type':       fields.String,
-    'items':      fields.Raw(attribute=lambda x: {i: v for i, v in x['items'].items()      if v} if x.get('items')      else None),
-    'properties': fields.Raw(attribute=lambda x: {i: v for i, v in x['properties'].items() if v} if x.get('properties') else None),
+    'properties': fields.Raw(attribute='properties'),
+    'required':   fields.List(fields.String)
 })
 
-simple_plugin_schema = Model('simple_plugin', {
+simple_plugin = Model('simple_plugin', {
     'name':         fields.String,
     'description':  fields.String,
 })
 
-plugin_schema = simple_plugin_schema.clone('plugin', {
-    'scheme_train':   fields.Nested(schema_schema, skip_none=True),
-    'scheme_predict': fields.Nested(schema_schema, skip_none=True),
+plugin = simple_plugin.clone('plugin', {
+    'shchemaSample':     fields.Nested(schema, skip_none=True),
+    'shchemaPrediction': fields.Nested(schema, skip_none=True),
 })
 
-plugins_schema = page_schema.clone('plugins', {
-    'contents': fields.List(fields.Nested(simple_plugin_schema, skip_none=True)),
+plugins = page.clone('plugins', {
+    'contents': fields.List(fields.Nested(simple_plugin, skip_none=True)),
 })
