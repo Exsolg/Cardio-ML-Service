@@ -1,4 +1,4 @@
-from plugins.base_plugin import Plugin
+from cardio.tools.base_plugin import Plugin
 
 
 class CovidRandomForest(Plugin):

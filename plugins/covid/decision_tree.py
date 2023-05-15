@@ -1,4 +1,4 @@
-from plugins.base_plugin import Plugin
+from cardio.tools.base_plugin import Plugin
 from joblib import dump, load
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split

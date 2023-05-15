@@ -17,7 +17,8 @@ services:
       CARDIO_HOST: 0.0.0.0
       CARDIO_SECRET_KEY: ${CARDIO_SECRET_KEY:-secret_key}
     volumes:
-      - ./models:/app/models
+      - ${CARDIO_MODELS_DIR:-./models}:/app/models
+      - ${CARDIO_PLUGINS_DIR:-./plugins}:/app/plugins
     ports:
       - "127.0.0.1:${CARDIO_PORT:-8080}:80"
 

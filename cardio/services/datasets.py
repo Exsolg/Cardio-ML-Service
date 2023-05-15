@@ -1,12 +1,10 @@
-from cardio.repositoryes import datasets as datasets_repository
-from cardio.repositoryes import data as data_repository
-from cardio.services import plugins as plugins_service
-from cardio.services import data as data_service
+from cardio.repositories import datasets as datasets_repository
+from cardio.tools import plugins as plugin_tools
 from cardio.services.errors import NotFoundError, InternalError
 
-from jsonschema.exceptions import ValidationError
 from loguru import logger
-from jsonschema import validate
+from math import ceil
+from datetime import datetime
 
 
 def get(id: str) -> dict:
@@ -17,19 +15,24 @@ def get(id: str) -> dict:
             raise NotFoundError(f'Dataset {id} not found')
 
         plugins = []
-        for p in dataset['plugins']:
-            try:
-                plugins.append(plugins_service.get(p))
+        for name in dataset['plugins']:
+            plugin = plugin_tools.get(name)
 
-            except NotFoundError as e:
-                logger.error(f'NotFoundError: {e}')
+            if not plugin:
+                logger.warning(f'Plugin {name} was not found when processing the dataset {id}')
+                continue
+            
+            plugins.append({
+                'name': plugin.__name__,
+                'description': plugin.description,
+            })
             
         dataset['plugins'] = plugins
 
         return dataset
     
     except NotFoundError as e:
-        logger.debug(f'NotFoundError: {e}')
+        logger.info(f'NotFoundError: {e}')
         raise e
 
     except Exception as e:
@@ -39,84 +42,35 @@ def get(id: str) -> dict:
 
 def get_list(filter: dict) -> dict:
     try:
-        return datasets_repository.get_list(filter)
-    
-    except Exception as e:
-        logger.error(f'Error: {e}')
-        raise InternalError(e)
+        page =  filter.pop('page')
+        limit = filter.pop('limit')
 
+        page =  page  if page  >= 1 else 1
+        limit = limit if limit >= 1 else 10
 
-def delete(id: str) -> bool:
-    get(id)
+        skip = (page - 1) * limit
 
-    try:
-        return datasets_repository.delete(id)
-    
-    except Exception as e:
-        logger.error(f'Error: {e}')
-        raise InternalError(e)
+        datasets, total = datasets_repository.get_list(skip, limit, filter)
 
+        for dataset in datasets:
+            plugins = []
+            for name in dataset['plugins']:
+                plugin = plugin_tools.get(name)
 
-def create(dataset: dict) -> dict:
-    for plugin_name in dataset['plugins']:
-        plugins_service.get_plugin(plugin_name)
-
-    try:
-        return datasets_repository.get(datasets_repository.create(dataset))
-
-    except Exception as e:
-        logger.error(f'Error: {e}')
-        raise e
-
-
-def update(id: str, dataset: dict) -> dict:
-    get(id)
-
-    if dataset.get('plugins'):
-        for plugin_name in dataset['plugins']:
-            plugins_service.get_plugin(plugin_name)
-
-    try:
-        datasets_repository.update(id, dataset)
-        return get(id)
-    
-    except Exception as e:
-        logger.error(f'Error: {e}')
-        raise InternalError(e)
-
-
-def add_data(id: str, data_list: dict) -> dict:
-    dataset = get(id)
-
-    for data in data_list['data']:
-        for p in dataset['plugins']:
-            try:
-                plugin = plugins_service.get_plugin(p['name'])
-                validate(data['sample'], plugin.scheme_sample)
-                validate(data['target'], plugin.scheme_prediction)
+                if not plugin:
+                    logger.warning(f'Plugin {name} was not found when processing the dataset {dataset["_id"]}')
+                    continue
+                
+                plugins.append(plugin.__name__)
             
-            except ValidationError as e:
-                logger.info(f'ValidationError when checking the plugin {p}: {e}')
-                raise ValidationError(f'Error when checking the plugin {p}: {e}')
-            
-            except Exception as e:
-                logger.error(f'Error: {e}')
-                raise InternalError(e)
-    
-    try:
-        for data in data_list['data']:                 # Поменять на подачу всего списка
-            data['datasetId'] = dataset['_id']
-            
-            id = data_repository.create(data)
-            
-            data['_id'] = id
+            dataset['plugins'] = plugins
 
         return {
-            'page':          1,
-            'limit':         len(data_list['data']),
-            'totalPages':    1,
-            'totalElements': len(data_list['data']),
-            'contents':      data_list['data'],
+            'contents':      datasets,
+            'page':          page,
+            'limit':         limit,
+            'totalPages':    ceil(total / limit),
+            'totalElements': total
         }
     
     except Exception as e:
@@ -124,9 +78,95 @@ def add_data(id: str, data_list: dict) -> dict:
         raise InternalError(e)
 
 
-def get_data_list(id: str, filter: dict) -> dict:
-    dataset = get(id)
+def delete(id: str) -> None:
+    try:
+        dataset = datasets_repository.get(id)
 
-    filter['datasetId'] = dataset['_id']
+        if not dataset:
+            raise NotFoundError(f'Dataset {id} not found')
 
-    return data_service.get_list(filter)
+        datasets_repository.delete(id)
+    
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
+        raise e
+
+    except Exception as e:
+        logger.error(f'Error: {e}')
+        raise InternalError(e)
+
+
+def create(dataset: dict) -> dict:
+    try:
+        for name in dataset['plugins']:
+            if not plugin_tools.get(name):
+                raise NotFoundError(f'Plugin {name} not found')
+            
+        dataset = datasets_repository.get(datasets_repository.create(dataset))
+
+        plugins = []
+        for name in dataset['plugins']:
+            plugin = plugin_tools.get(name)
+            
+            plugins.append({
+                'name': plugin.__name__,
+                'description': plugin.description,
+            })
+            
+        dataset['plugins'] = plugins
+        
+        return dataset
+
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
+        raise e
+
+    except Exception as e:
+        logger.error(f'Error: {e}')
+        raise e
+
+
+def update(id: str, dataset: dict) -> dict:     # ТУТ если меняем плагины, нужно валижировать вю дату
+    try:
+        _dataset = datasets_repository.get(id)
+
+        if not _dataset:
+            raise NotFoundError(f'Dataset {id} not found')
+
+        for name in dataset['plugins']:
+            if not plugin_tools.get(name):
+                raise NotFoundError(f'Plugin {name} not found')
+
+        datasets_repository.update(id, dataset)
+        
+        return datasets_repository.get(id)
+    
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
+        raise e
+
+    except Exception as e:
+        logger.error(f'Error: {e}')
+        raise InternalError(e)
+
+
+def training_status(id: str) -> dict:
+    try:
+        _dataset = datasets_repository.get(id)
+
+        if not _dataset:
+            raise NotFoundError(f'Dataset {id} not found')
+        
+        return {
+            'plugin':            'None',
+            'progress':          0,
+            'trainingStartDate': datetime.now(),
+        }
+    
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
+        raise e
+
+    except Exception as e:
+        logger.error(f'Error: {e}')
+        raise InternalError(e)

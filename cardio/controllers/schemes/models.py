@@ -1,12 +1,7 @@
 from flask_restx import Model, fields
 from cardio.controllers.schemes.base import page
-from cardio.controllers.schemes.datasets import simple_dataset
+from cardio.controllers.schemes.plugins import plugin
 
-
-score = Model('score', {
-    'name':  fields.String,
-    'value': fields.Float(min=0, max=1),
-})
 
 prediction = Model('predict', {
     'prediction': fields.Raw(attribute='prediction'),
@@ -14,15 +9,14 @@ prediction = Model('predict', {
 
 simple_model = Model('simple_model', {
     'id':          fields.String(attribute='_id'),
-    'created_at':  fields.DateTime,
-    'description': fields.String,
+    'createdAt':   fields.DateTime,
     'score':       fields.Raw(attribute='score'),
-    'dataset':     fields.String,
+    'plugin':      fields.String()
 })
 
 model = simple_model.clone('model', {
-    'params':            fields.Raw(attribute='params'),
-    'dataset':           fields.Nested(simple_dataset, skip_none=True),
+    'params':  fields.Raw(attribute='params'),
+    'plugin':  fields.Nested(plugin, skip_none=True),
 })
 
 models = page.clone('models', {

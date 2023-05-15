@@ -1,4 +1,4 @@
-from cardio.db.repositoryes import init_repositories
+from cardio.db.repositories import init_repositories
 from cardio.db import models
 from cardio.db.enums import For
 from cardio.tests.config import Config

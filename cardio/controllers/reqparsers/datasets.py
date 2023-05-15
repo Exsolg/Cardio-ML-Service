@@ -7,8 +7,4 @@ create = Model('create_dataset', {
     'plugins': fields.List(fields.String),
 })
 
-update = Model('update_dataset', {
-    'name':  fields.String,
-    'description': fields.String,
-    'plugins': fields.List(fields.String),
-})
+update = create.clone('update_dataset', {})

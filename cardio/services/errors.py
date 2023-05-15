@@ -6,3 +6,6 @@ class InternalError(Exception):
 
 class FieldNotExistError(Exception):
     pass
+
+class ValidationError(Exception):
+    pass

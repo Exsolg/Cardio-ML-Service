@@ -1,6 +1,7 @@
 .vscode/
 .idea/
 models/
+plugins/
 env/
 venv/
 .env

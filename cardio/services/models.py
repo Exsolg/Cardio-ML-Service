@@ -1,67 +1,104 @@
-from cardio.repositoryes import models
-from cardio.services import errors
+from cardio.tools import plugins as plugin_tools
+from cardio.repositories import models as models_repository
+from cardio.repositories import datasets as datasets_repository
+from cardio.services.errors import NotFoundError, InternalError
+
 from loguru import logger
-from cardio.services import plugins as plugins_service
-from jsonschema import validate
+from math import ceil
 
 
-def get(id: str) -> dict:
+def get(dataset_id: int, id: str) -> dict:
     try:
-        model = models.get(id)
+        dataset = datasets_repository.get(dataset_id)
+
+        if not dataset:
+            raise NotFoundError(f'Dataset {dataset_id} not found')
+
+        model = models_repository.get(id)
         
         if not model:
-            raise errors.NotFoundError(f'Model {id} not found')
+            raise NotFoundError(f'Model {id} not found in dataset {dataset_id}')
+        
+        plugin = plugin_tools.get(model['plugin'])
+        
+        if plugin:
+            model['plugin'] = {
+            'name':              plugin.__name__,
+            'description':       plugin.description,
+            'shchemaPrediction': plugin.scheme_prediction,
+            'shchemaSample':     plugin.scheme_sample,
+            }
+        
+        else:
+            logger.warning(f'Plugin {model["plugin"]} was not found when processing the model {id}')
+            model['plugin'] = None
         
         return model
     
-    except errors.NotFoundError as e:
-        logger.debug(f'NotFoundError: {e}')
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
         raise e
     
     except Exception as e:
         logger.error(f'Error: {e}')
-        raise errors.InternalError(e)
+        raise InternalError(e)
 
 
-def get_list(filter: dict) -> dict:
+def get_list(dataset_id: int, filter: dict) -> dict:
     try:
-        return models.get_list(filter)
+        dataset = datasets_repository.get(dataset_id)
+
+        if not dataset:
+            raise NotFoundError(f'Dataset {dataset_id} not found')
+
+        page =  filter.pop('page')
+        limit = filter.pop('limit')
+
+        page =  page  if page  >= 1 else 1
+        limit = limit if limit >= 1 else 10
+
+        skip = (page - 1) * limit
+
+        models, total = models_repository.get_list(skip, limit, filter)
+
+        for model in models:
+            plugin = plugin_tools.get(model['plugin'])
+
+            if not plugin:
+                logger.warning(f'Plugin {model["plugin"]} was not found when processing the model {model["_id"]}')
+                model['plugin'] = None
+
+        return {
+            'contents':      models,
+            'page':          page,
+            'limit':         limit,
+            'totalPages':    ceil(total / limit),
+            'totalElements': total
+        }
     
     except Exception as e:
         logger.error(f'Error: {e}')
-        raise errors.InternalError(e)
+        raise InternalError(e)
 
 
-def delete(id: str) -> bool:
-    get(id)
-
+def delete(dataset_id: int, id: str):
     try:
-        return models.delete(id)
+        dataset = datasets_repository.get(dataset_id)
+
+        if not dataset:
+            raise NotFoundError(f'Model {id} not found in dataset {dataset_id}')
+
+        model = models_repository.get(id)
+        
+        if not model:
+            raise NotFoundError(f'Model {id} not found')
+
+        models_repository.delete(id)
     
-    except Exception as e:
-        logger.error(f'Error: {e}')
-        raise errors.InternalError(e)
-
-
-def predict(id: str, params: dict) -> float:
-    model = get(id)
-    plugin = plugins_service.get(model['plugin'])
-
-    validate(params, plugin.scheme)
-
-    try:
-        if 'file_path' not in model:
-            raise errors.FieldNotExistError(f'Field "file_path" does not exist in the model {id}')
-
-        p = plugin()
-        p.load_from_file(model['file_path'])
-
-        return p.predict(params)
-
-    except errors.FieldNotExistError as e:
-        logger.error(f'FieldNotExistError: {e}')
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
         raise e
 
     except Exception as e:
         logger.error(f'Error: {e}')
-        raise errors.InternalError(e)
+        raise InternalError(e)

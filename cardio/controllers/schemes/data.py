@@ -3,17 +3,13 @@ from cardio.controllers.schemes.base import page
 from cardio.controllers.schemes.datasets import simple_dataset
 
 
-simple_data = Model('simple_data', {
+data = Model('data', {
     'id':      fields.String(attribute='_id'),
     'sample':  fields.Raw(attribute='sample'),
-    'target':  fields.Raw(attribute='target'),
-    'dataset': fields.String(attribute='datasetId'),
-})
-
-data = simple_data.clone('data', {
-    'dataset': fields.Nested(simple_dataset, skip_none=True),
+    'prediction':  fields.Raw(attribute='prediction'),
+    'createdAt':   fields.DateTime,
 })
 
 data_list = page.clone('data_list', {
-    'contents': fields.List(fields.Nested(simple_data, skip_none=True)),
+    'contents': fields.List(fields.Nested(data, skip_none=True)),
 })

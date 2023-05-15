@@ -19,8 +19,8 @@ class Config(object):
     HOST =                  getenv('CARDIO_HOST',               default='127.0.0.1')
     DEBUG =       strtobool(getenv('CARDIO_DEBUG',              default='false'))
 
-    MODELS_DIR =            getenv('CARDIO_MODELS_DIR',         default='models')
-    PLUGINS_DIR =           getenv('CARDIO_PLUGINS_DIR',        default='plugins')
+    MODELS_DIR =            getenv('CARDIO_MODELS_DIR',         default='./models')
+    PLUGINS_DIR =           getenv('CARDIO_PLUGINS_DIR',        default='./plugins')
 
     LOG_LEVEL =             getenv('CARDIO_LOG_LEVEL',          default='info')
     LOG_DIR =               getenv('CARDIO_LOG_DIR',            default='log')

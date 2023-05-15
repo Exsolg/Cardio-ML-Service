@@ -6,7 +6,9 @@ from loguru import logger
 from cardio.controllers.models import api as models_api
 from cardio.controllers.plugins import api as plugins_api
 from cardio.controllers.datasets import api as datasets_api
-from cardio.repositoryes.repositoryes import init as init_repositoryes
+from cardio.controllers.data import api as data_api
+from cardio.repositories.repositories import init as init_repositories
+from cardio.tools.plugins import init as init_plugins
 
 from config import Config
 
@@ -15,7 +17,7 @@ def create_app(config: Config):
     app = Flask(__name__)
     db = PyMongo()
     api = Api(prefix='/v1',
-              version='2.1.0',
+              version='2.2.2',
               title='Cardio ML API',
               description='The ML API for the Cardio Center project')
     
@@ -26,13 +28,18 @@ def create_app(config: Config):
 
     db.init_app(app)
     db.db = db.cx[config.MONGO_DB_NAME]
-    init_repositoryes(db.db)
+    init_repositories(db.db)
     
     logger.info('API initialization...')
 
     api.add_namespace(models_api, models_api.name)
     api.add_namespace(plugins_api, plugins_api.name)
     api.add_namespace(datasets_api, datasets_api.name)
+    api.add_namespace(data_api, data_api.name)
+
+    logger.info('Plugins initialization...')
+
+    init_plugins(config.PLUGINS_DIR)
 
     api.init_app(app)
     

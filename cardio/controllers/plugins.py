@@ -1,5 +1,6 @@
 from flask_restx import Resource, Namespace, marshal
 from flask_restx._http import HTTPStatus
+from loguru import logger
 
 from cardio.services.errors import NotFoundError
 from cardio.services import plugins as plugins_service
@@ -9,17 +10,17 @@ from cardio.controllers.schemes import plugins as plugin_schemes
 
 
 api = Namespace('/plugins')
-api.models[base_schemes.error.name] = base_schemes.error
-api.models[plugin_schemes.plugin.name] = plugin_schemes.plugin
-api.models[plugin_schemes.schema.name] = plugin_schemes.schema
-api.models[plugin_schemes.plugins.name] = plugin_schemes.plugins
-api.models[plugin_schemes.simple_plugin.name] = plugin_schemes.simple_plugin
+api.add_model(base_schemes.error.name, base_schemes.error)
+api.add_model(plugin_schemes.schema.name, plugin_schemes.schema)
+api.add_model(plugin_schemes.plugin.name, plugin_schemes.plugin)
+api.add_model(plugin_schemes.plugins.name, plugin_schemes.plugins)
+api.add_model(plugin_schemes.simple_plugin.name, plugin_schemes.simple_plugin)
 
 
 @api.route('/')
 class Plugin(Resource):
     @api.doc(description='Gets plugins list', id='get_list')
-    @api.expect(base_reqparsers.get_list)
+    @api.expect(base_reqparsers.get_list, validate=True)
     @api.response(HTTPStatus.OK, 'Success', model=plugin_schemes.plugins)
     @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', model=base_schemes.error)
     def get(self):
@@ -27,11 +28,11 @@ class Plugin(Resource):
             args = base_reqparsers.get_list.parse_args()
 
             return marshal(plugins_service.get_list(args),
-                plugin_schemes.plugins,
-                skip_none=True), HTTPStatus.OK
+                           plugin_schemes.plugins,
+                           skip_none=True), HTTPStatus.OK
         
         except Exception as e:
-            print(e)
+            logger.debug(f'Error: {e}')
             return {'message': 'Internal Server Error'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -44,11 +45,12 @@ class Plugin(Resource):
     def get(self, name):
         try:
             return marshal(plugins_service.get(name),
-                plugin_schemes.plugin,
-                skip_none=True), HTTPStatus.OK
+                           plugin_schemes.plugin,
+                           skip_none=True), HTTPStatus.OK
         
         except NotFoundError as e:
             return {'message': str(e)}, HTTPStatus.NOT_FOUND
 
-        except Exception:
+        except Exception as e:
+            logger.debug(f'Error: {e}')
             return {'message': 'Internal Server Error'}, HTTPStatus.INTERNAL_SERVER_ERROR
