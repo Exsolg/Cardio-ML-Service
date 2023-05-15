@@ -102,6 +102,11 @@ def test_get_list():
     db_mdls = models.get_list()
     assert db_mdls
     assert len(db_mdls) == len(mdls_covid) + len(mdls_cabs)
+    # assert db_mdls['contents']
+    # assert db_mdls['page']
+    # assert db_mdls['limit']
+    # assert db_mdls['total_pages']
+    # assert db_mdls['total_elements']
     for m in db_mdls:
         assert m['_id'] in mdls_covid or m['_id'] in mdls_cabs
     
