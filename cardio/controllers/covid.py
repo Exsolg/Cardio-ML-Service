@@ -6,6 +6,8 @@ from loguru import logger
 from uuid import uuid4
 from os import makedirs
 from os.path import exists
+from pandas import DataFrame, Series
+from math import ceil
 
 
 def get(id: str) -> dict:
@@ -23,9 +25,18 @@ def get(id: str) -> dict:
         raise errors.InternalError(e)
 
 
-def get_list(page: int = 0, limit: int = 3) -> list:
+def get_list(page: int = 1, limit: int = 3) -> dict:
+    page = page if page > 0 else 1
+
     try:
-        return models.get_list(page=page, limit=limit, _for=For.COVID)
+        total = models.get_total_count()
+        return {
+            'contents': models.get_list(page=page, limit=limit, _for=For.COVID),
+            'page': page,
+            'limit': limit,
+            'totalPapes': ceil(total / page),
+            'totalElements': total
+        }
     except Exception as e:
         logger.error(f'Error: {e}')
         raise errors.InternalError(e)
@@ -48,7 +59,7 @@ def predict(id: str, params: dict) -> float:
             raise errors.FieldNotExistError(f'Field "file_path" does not exist in the model {id}')
 
         model = load(model['file_path'])
-        return model.predict([prepare_params(params)])[0]
+        return model.predict(prepare_params(params))[0]
 
     except errors.FieldNotExistError as e:
         logger.error(f'FieldNotExistError: {e}')
@@ -83,27 +94,30 @@ def create(model_file, description:str = None) -> dict:
     return get(_id)
 
 
-def prepare_params(params: dict) -> list:
-    return [
-        0 if params['sex'] == 'male' else 1,
-        params['age'],
-        params['urea'] if params.get('urea') else 0,
-        params['creatinine'] if params.get('creatinine') else 0,
-        params['SKF'] if params.get('SKF') else 0,
-        params['AST'] if params.get('AST') else 0,
-        params['ALT'] if params.get('ALT') else 0,
-        params['CRP'] if params.get('CRP') else 0,
-        params['glucose'] if params.get('glucose') else 0,
-        params['leukocytes'] if params.get('leukocytes') else 0,
-        params['platelets'] if params.get('platelets') else 0,
-        params['neutrophils'] if params.get('neutrophils') else 0,
-        params['lymphocytes'] if params.get('lymphocytes') else 0,
-        params['neutrophilLymphocyteRatio'] if params.get('neutrophilLymphocyteRatio') else 0,
-        params['DDimer'] if params.get('DDimer') else 0,
-        0 if params.get('severity') == 'severe' else 0.5 if params.get('severity') == 'medium' else 1,
-        1 if params.get('AG') else 0,
-        1 if params.get('SD') else 0,
-        1 if params.get('IBS') else 0,
-        1 if params.get('HOBL') else 0,
-        1 if params.get('HBP') else 0,
-    ]
+def prepare_params(params: dict) -> DataFrame:
+    return DataFrame(data=[Series(data={
+        'sex':                          0 if params['sex'] == 'male' else 1,
+        'age':                          params['age'],
+        'urea':                         params['urea'] if params.get('urea') else 7.8,
+        'creatinine':                   params['creatinine'] if params.get('creatinine') else 85,
+        'SKF':                          params['SKF'] if params.get('SKF') else 73.5,
+        'AST':                          params['AST'] if params.get('AST') else 36,
+        'ALT':                          params['ALT'] if params.get('ALT') else 30,
+        'CRP':                          params['CRP'] if params.get('CRP') else 69.1,
+        'glucose':                      params['glucose'] if params.get('glucose') else 6.7,
+        'leukocytes':                   params['leukocytes'] if params.get('leukocytes') else 9.09,
+        'platelets':                    params['platelets'] if params.get('platelets') else 216,
+        'neutrophils':                  params['neutrophils'] if params.get('neutrophils') else 7.8,
+        'lymphocytes':                  params['lymphocytes'] if params.get('lymphocytes') else 0.9,
+        'neutrophilLymphocyteRatio':    params['neutrophilLymphocyteRatio'] if params.get('neutrophilLymphocyteRatio') else 9.359375,
+        'DDimer':                       params['DDimer'] if params.get('DDimer') else 2013,
+        'AG':                           1 if params.get('AG') else 1,
+        'SD':                           1 if params.get('SD') else 0,
+        'IBS':                          1 if params.get('IBS') else 1,
+        'HOBL':                         1 if params.get('HOBL') else 0,
+        'HBP':                          1 if params.get('HBP') else 0,
+        'severityLight':                1 if params.get('severity') == 'light' else 0,
+        'severityMedium':               1 if params.get('severity') == 'medium' else 0,
+        'severitySevere':               1 if params.get('severity') == 'severe' else 0
+        # Если степень тяжести не подано, нужно заполнять медианой
+    })])

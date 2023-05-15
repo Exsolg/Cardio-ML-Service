@@ -1,0 +1,14 @@
+.vscode/
+.idea/
+models/
+env/
+venv/
+.env
+.env.sample
+.gitignore
+pytest.ini
+README.md
+.pytest_cache/
+__pycache__/
+*.joblib
+mongodb-data/

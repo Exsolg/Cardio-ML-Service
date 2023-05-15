@@ -25,7 +25,11 @@ model_schema = simple_model_schema.clone('model', {
 })
 
 models_schema = Model('models', {
-    'models': fields.List(fields.Nested(simple_model_schema, skip_none=True))
+    'contents':         fields.List(fields.Nested(simple_model_schema, skip_none=True)),
+    'page':             fields.Integer,
+    'limit':            fields.Integer,
+    'totalPapes':       fields.Integer,
+    'totalElements':    fields.Integer 
 })
 
 error_schema = Model('error', {

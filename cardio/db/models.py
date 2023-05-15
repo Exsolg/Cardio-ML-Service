@@ -63,3 +63,10 @@ def get_list(page: int = None, limit: int = None, _for: enums.For = None) -> lis
     except Exception as e:
         logger.error(f'Error: {e}')
         raise e
+
+def get_total_count(_for: enums.For = None) -> int:
+    filters = {'deleted_at': None}
+    if _for:
+        filters['for'] = _for
+    
+    return len(list(get_models_repository().find(filters)))

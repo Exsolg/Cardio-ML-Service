@@ -30,5 +30,5 @@ covid_model_create_parser.add_argument('model', required=True, type=FileStorage,
 covid_model_create_parser.add_argument('description', type=str, location='form')
 
 model_list_parser = RequestParser()
-model_list_parser.add_argument('page', type=int, default=0)
+model_list_parser.add_argument('page', type=int, default=1)
 model_list_parser.add_argument('limit', type=int, default=3)

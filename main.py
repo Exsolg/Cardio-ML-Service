@@ -3,7 +3,7 @@ from cardio.app import create_app
 
 
 def main():
-    create_app(Config).run(port=Config.PORT, debug=Config.DEBUG)
+    create_app(Config).run(port=Config.PORT, host=Config.HOST, debug=Config.DEBUG)
 
 
 if __name__ == '__main__':
