@@ -23,9 +23,9 @@ def get(id: str) -> dict:
         raise errors.InternalError(e)
 
 
-def get_list() -> list:
+def get_list(page: int = 0, limit: int = 3) -> list:
     try:
-        return models.get_list(For.COVID)
+        return models.get_list(page=page, limit=limit, _for=For.COVID)
     except Exception as e:
         logger.error(f'Error: {e}')
         raise errors.InternalError(e)
@@ -58,7 +58,7 @@ def predict(id: str, params: dict) -> float:
         raise errors.InternalError(e)
 
 
-def create(model_file) -> dict:
+def create(model_file, description:str = None) -> dict:
     try:
         model = load(model_file)
 
@@ -72,7 +72,8 @@ def create(model_file) -> dict:
         _id = models.create({
             'python_type': str(type(model)),
             'file_path': file_path,
-            'params': model.get_params()
+            'params': model.get_params(),
+            'description': description
         }, For.COVID)
 
     except Exception as e:
@@ -97,9 +98,9 @@ def prepare_params(params: dict) -> list:
         params['platelets'] if params.get('platelets') else 0,
         params['neutrophils'] if params.get('neutrophils') else 0,
         params['lymphocytes'] if params.get('lymphocytes') else 0,
-        params['neutrophil-lymphocyteRatio'] if params.get('neutrophil-lymphocyteRatio') else 0,
+        params['neutrophilLymphocyteRatio'] if params.get('neutrophilLymphocyteRatio') else 0,
+        params['DDimer'] if params.get('DDimer') else 0,
         0 if params.get('severity') == 'severe' else 0.5 if params.get('severity') == 'medium' else 1,
-        params['D-dimer'] if params.get('D-dimer') else 0,
         1 if params.get('AG') else 0,
         1 if params.get('SD') else 0,
         1 if params.get('IBS') else 0,

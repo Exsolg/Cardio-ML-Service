@@ -12,7 +12,7 @@ def create_app(config):
     app = Flask(__name__)
     db = PyMongo()
     api = Api(prefix='/v1',
-              version='1.0.0',
+              version='1.1.0',
               title='Cardio ML API',
               description='The ML API for the Cardio Center project')
     

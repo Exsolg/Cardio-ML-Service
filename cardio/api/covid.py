@@ -23,7 +23,11 @@ class Model(Resource):
     @covid_api.doc(description='Gets models list', id='get_list')
     def get(self):
         try:
-            return marshal({'models': covid.get_list()}, schemes.models_schema, skip_none=True), 200
+            args = reqparsers.model_list_parser.parse_args()
+            return marshal({'models': covid.get_list(**args)},
+                           schemes.models_schema,
+                           skip_none=True), 200
+        
         except Exception as e:
             logger.error(f'Error: {e}')
             return {'message': 'Internal Server Error'}, 500
@@ -35,7 +39,10 @@ class Model(Resource):
     def post(self):
         args = reqparsers.covid_model_create_parser.parse_args()
         try:
-            return marshal(covid.create(args['model']), schemes.simple_model_schema, skip_none=True), 200
+            return marshal(covid.create(args['model'], description=args['description']),
+                           schemes.simple_model_schema,
+                           skip_none=True), 200
+        
         except Exception as e:
             logger.error(f'Error: {e}')
             return {'message': 'Internal Server Error'}, 500
@@ -49,10 +56,13 @@ class Model(Resource):
     @covid_api.doc(description='Get model', id='get', params={'id': {'format': 'uuid'}})
     def get(self, id):
         try:
-            print(type(id))
-            return marshal(covid.get(str(id)), schemes.model_schema, skip_none=True), 200
+            return marshal(covid.get(str(id)),
+                           schemes.model_schema,
+                           skip_none=True), 200
+        
         except errors.NotFoundError:
             return {'message': f'Model {id} not found'}, 404
+        
         except Exception as e:
             logger.error(f'Error: {e}')
             return {'message': 'Internal Server Error'}, 500
@@ -65,8 +75,10 @@ class Model(Resource):
         try:
             covid.delete(str(id))
             return None, 204
+        
         except errors.NotFoundError:
             return {'message': f'Model {id} not found'}, 404
+        
         except Exception as e:
             logger.error(f'Error: {e}')
             return {'message': 'Internal Server Error'}, 500
@@ -80,11 +92,13 @@ class Model(Resource):
     @covid_api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', model=schemes.error_schema)
     @covid_api.doc(description='Model Prediction', id='predict', params={'id': {'format': 'uuid'}})
     def post(self, id):
-        args = reqparsers.covid_predict_parser.parse_args()
         try:
-            return covid.predict(str(id), args)
+            args = reqparsers.covid_predict_parser.parse_args()
+            return covid.predict(str(id), args), 200
+        
         except errors.NotFoundError:
             return {'message': f'Model {id} not found'}, 404
+        
         except Exception as e:
             logger.error(f'Error: {e}')
             return {'message': 'Internal Server Error'}, 500
