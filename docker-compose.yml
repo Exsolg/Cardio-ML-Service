@@ -14,8 +14,8 @@ services:
       CARDIO_MONGO_DB_NAME: ${CARDIO_MONGO_DB_NAME:-cardio}
       CARDIO_MONGO_USER: ${CARDIO_MONGO_USER:-admin}
       CARDIO_MONGO_PASSWORD: ${CARDIO_MONGO_PASSWORD:-password}
-      CARDIO_HOST: 0.0.0.0
       CARDIO_SECRET_KEY: ${CARDIO_SECRET_KEY:-secret_key}
+      CARDIO_HOST: 0.0.0.0
     volumes:
       - ${CARDIO_MODELS_DIR:-./models}:/app/models
       - ${CARDIO_PLUGINS_DIR:-./plugins}:/app/plugins

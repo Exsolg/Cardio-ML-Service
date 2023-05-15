@@ -9,6 +9,7 @@ from cardio.controllers.datasets import api as datasets_api
 from cardio.controllers.data import api as data_api
 from cardio.repositories.repositories import init as init_repositories
 from cardio.tools.plugins import init as init_plugins
+from cardio.tools.model_files import init as init_model_files
 
 from config import Config
 
@@ -40,6 +41,10 @@ def create_app(config: Config):
     logger.info('Plugins initialization...')
 
     init_plugins(config.PLUGINS_DIR)
+
+    logger.info('Models initialization...')
+
+    init_model_files(config.MODELS_DIR)
 
     api.init_app(app)
     

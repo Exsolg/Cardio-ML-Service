@@ -108,6 +108,8 @@ def create(dataset: dict) -> dict:
         for name in dataset['plugins']:
             if not plugin_tools.get(name):
                 raise NotFoundError(f'Plugin {name} not found')
+        
+        # ТУТ Проверять, что схемы плагинов не противоречат друг другу
             
         dataset = datasets_repository.get(datasets_repository.create({'newData': 0, **dataset}))
 

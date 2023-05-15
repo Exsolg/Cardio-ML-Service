@@ -48,7 +48,13 @@ class Dataset(Resource):
     @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', model=base_schemes.error)
     def post(self, id):
         try:
-            return marshal(data_service.create_list(str(id), api.payload),
+            # ТУТ Убрать этот ужас. Тут из json удаляются поля с None
+            data = [{
+                'sample': {k: v for k, v in data['sample'].items() if v is not None},
+                'prediction': {k: v for k, v in data['prediction'].items() if v is not None},
+                } for data in api.payload]
+
+            return marshal(data_service.create_list(str(id), data),
                            data_schemes.data_list,
                            skip_none=True), HTTPStatus.OK
         

@@ -1,12 +1,19 @@
 from cardio.tools.base_plugin import Plugin
-from joblib import dump, load
+from cardio.tools.model_files import directory
+from cardio.tools.helpers import grid_search
+
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score
-import pandas
+
+import joblib
+import json
+from pandas import DataFrame, get_dummies
 from uuid import uuid4
+from loguru import logger
 from os.path import exists
 from os import makedirs
+from time import time
 
 
 class CovidDecisionTree(Plugin):
@@ -14,7 +21,7 @@ class CovidDecisionTree(Plugin):
     Predicting covid-19 patient outcome using decision tree method
     '''
 
-    scheme_prediction: dict = {
+    scheme_sample: dict = {
         'type': 'object',
         'properties': {
             'sex': {
@@ -82,89 +89,121 @@ class CovidDecisionTree(Plugin):
             'HBP': {
                 'type': 'boolean'
             },
-        }
-    }
-
-
-    scheme_sample: dict = {
-        'type': 'array',
-        'items': {
-            'type': 'object',
-            'properties': dict(scheme_prediction['properties'], survived={'type': 'boolean'}),
         },
+        'required': ['sex', 'age', 'severity'],
     }
+
+
+    scheme_prediction: dict = {
+        'type': 'object',
+        'properties': {
+            'survived': {
+                'type': 'boolean',
+            },
+        },
+        'required': ['survived'],
+    }
+
+    plugin_dir = 'covid_decision_tree'
 
 
     def __init__(self) -> None:
         self.model: DecisionTreeClassifier = None
-        self.x_test = None
-        self.y_test = None
+        self.x_test =  None
+        self.y_test =  None
+        self.medians = {}
+        self.progress = 0
 
 
-    def train(self, data):
-        data = self._prepare_data(data)
+    def train(self, data: list[dict]) -> None:
+        data: DataFrame = self._prepare_data(data)
+
+        logger.info(data)
+        logger.info(list(data.columns))
+
         x_train, x_test, y_train, y_test = train_test_split(data.drop('survived', axis=1), data['survived'], random_state=1, test_size=0.3)
-
-        self.model = DecisionTreeClassifier(random_state=1)
-        self.model.fit(x_train, y_train)
 
         self.x_test = x_test
         self.y_test = y_test
 
+        self.model = grid_search(DecisionTreeClassifier,
+                                 {
+                                     'criterion': ['gini', 'entropy'],
+                                     'max_depth': list(range(5, 51, 2)),
+                                     'random_state': [int(time())]
+                                 },
+                                 lambda model: model.fit(x_train, y_train),
+                                 lambda model: f1_score(self.y_test, model.predict(self.x_test), average='weighted')
+                                 )
 
-    def predict(self, data) -> float:
-        return 0.5
+
+    def predict(self, data: list[dict]) -> list[dict]:
+        samples = self._prepare_samples(data)
+        predictions = self.model.predict(samples)
+        return [{'survived': bool(i)} for i in predictions]
 
 
     def get_params(self,) -> dict:
         return self.model.get_params()
     
     
-    def get_score(self,) -> list[dict]:
-        return [
-            {
-                'name': 'f1',
-                'value': f1_score(self.y_test, self.model.predict(self.x_test)),
-            },
-            {
-                'name': 'recall',
-                'value': recall_score(self.y_test, self.model.predict(self.x_test)),
-            },
-            {
-                'name': 'precision',
-                'value': precision_score(self.y_test, self.model.predict(self.x_test)),
-            },
-            {
-                'name': 'accuracy',
-                'value': accuracy_score(self.y_test, self.model.predict(self.x_test)),
+    def get_score(self) -> dict:
+        return {
+            'f1':           f1_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
+            'recall':       recall_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
+            'precision':    precision_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
+            'accuracy':     accuracy_score(self.y_test, self.model.predict(self.x_test)),
             }
-        ]
 
 
-    def load_from_file(self, file: str) -> None:
-        self.model = load(file)
+    def load_from_file(self, path: str) -> None:
+        self.model = joblib.load(f'{directory()}/{path}/model.joblib')
+
+        with open(f'{directory()}/{path}/medians.joblib', 'r', encoding='utf-8') as f:
+            self.medians = json.load(f)
 
 
     def save_in_file(self) -> str:
-        path = f'models/covid_decision_tree/{str(uuid4())}.joblib'
-        dump(self.model, path)
+        path = f'{CovidDecisionTree.plugin_dir}/{str(uuid4())}'
+        dir_path = f'{directory()}/{path}'
+
+        makedirs(dir_path)
+
+        joblib.dump(self.model, f'{dir_path}/model.joblib')
+
+        with open(f'{dir_path}/medians.json', 'w', encoding='utf-8') as f:
+            json.dump(self.medians, f, ensure_ascii=False, indent=4)
+
         return path
 
 
     def on_load() -> None:
-        if not exists('models/covid_decision_tree'):
-            makedirs('models/covid_decision_tree')
+        if not exists(f'{directory()}/{CovidDecisionTree.plugin_dir}'):
+            makedirs(f'{directory()}/{CovidDecisionTree.plugin_dir}')
 
 
-    def _prepare_data(data: dict) -> pandas.DataFrame:
-        data = pandas.DataFrame(data)
-        
-        data = data.fillna(data.median())
+    def get_progress(self) -> int:
+        return self.progress
 
-        severity = pandas.get_dummies(data[['severity']])
-        data = data.drop('severity', axis=1)
-        data = data.join(severity)
-        
+
+    def _prepare_data(self, data: list[dict]) -> DataFrame:
+        # ТУТ возможно, может быть перепутано местами из за словаря
+        data: DataFrame = DataFrame([{**i['sample'], **i['prediction']} for i in data])
+
+        data.loc[data.sex == 'male', 'sex'] = 0.
+        data.loc[data.sex == 'female', 'sex'] = 1.
+
+        data.loc[data['severity'] == 'light',  'severity'] = 0.0
+        data.loc[data['severity'] == 'medium', 'severity'] = 1.0
+        data.loc[data['severity'] == 'severe', 'severity'] = 2.0
+
         data = data.astype('float64')
+        self.medians = dict(data.median())
+        data = data.fillna(self.medians)
+
+        # ТУТ если остались пустые ячейки, заполнить их чем нибудь
         
         return data
+
+    def _prepare_samples(self, data: list[dict]) -> DataFrame:
+        return DataFrame()

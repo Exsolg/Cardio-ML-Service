@@ -115,7 +115,7 @@ def predict(dataset_id: int, id: str, samples: list[dict]) -> list[dict]:
 
         model = models_repository.get(id)
         
-        if not model:
+        if not model:   # ТУТ проверять, что модель именно в датасете
             raise NotFoundError(f'Model {id} not found in dataset {dataset_id}')
 
         plugin = plugin_tools.get(model['plugin'])
@@ -127,9 +127,8 @@ def predict(dataset_id: int, id: str, samples: list[dict]) -> list[dict]:
             validate(samle['sample'], plugin.scheme_sample)
         
         plugin: Plugin = plugin()
+        
         plugin.load_from_file(model['filePath'])
-
-        logger.info(samples)
 
         predictions = plugin.predict(samples)
 

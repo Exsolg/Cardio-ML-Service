@@ -22,7 +22,7 @@ def gelt_list(skip: int = None, limit: int = None) -> list[Plugin]:
     return plugins, len(_plugins)
 
 
-def init(directory: str):
+def init(directory: str) -> None:
     try:
         if directory[:2] == './' or directory[:2] == '.\\':
             directory = directory[2:]
@@ -49,6 +49,8 @@ def init(directory: str):
             if plugin.__name__ in _plugins:
                 logger.warning(f'There is already a plugin named {plugin.__name__}')
                 continue
+
+            # ТУТ проверять, что схема валидна
 
             _plugins[plugin.__name__] = plugin
             plugin.on_load()
