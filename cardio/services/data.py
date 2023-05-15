@@ -130,15 +130,15 @@ def create_list(dataset_id: int, data: list[dict]) -> dict:
             raise NotFoundError(f'Dataset {dataset_id} not found')
 
         for name in dataset['plugins']:
-                plugin = plugin_tools.get(name)
-                
-                if not plugin:
-                    logger.warning(f'Plugin {name} was not found when processing the dataset {dataset_id}')
-                    continue
+            plugin = plugin_tools.get(name)
+            
+            if not plugin:
+                logger.warning(f'Plugin {name} was not found when processing the dataset {dataset_id}')
+                continue
 
-                for d in data:
-                    validate(d['sample'], plugin.scheme_sample)
-                    validate(d['prediction'], plugin.scheme_prediction)
+            for d in data:
+                validate(d['sample'], plugin.scheme_sample)
+                validate(d['prediction'], plugin.scheme_prediction)
 
         for d in data:
             data_repository.create({'datasetId': dataset_id, **d})
@@ -146,14 +146,20 @@ def create_list(dataset_id: int, data: list[dict]) -> dict:
         new_data, total = data_repository.get_list(
             skip=dataset['dataCount'],
             limit=len(data),
-            filter={'datasetId': dataset['_id']})
+            filter={'datasetId': dataset_id})
         
-        data_for_training, _ = data_repository.get_list(
-            skip=0,
-            limit=total,
-            filter={'datasetId': dataset['_id']})
+        if len(data) + dataset['newData'] >= dataset['trainingSteps']:
+            datasets_repository.update(dataset_id, {'newData': 0})
 
-        dataset_tools.add_to_training_queue(dataset, data_for_training, _save_models)
+            data_for_training, _ = data_repository.get_list(
+                skip=0,
+                limit=total,
+                filter={'datasetId': dataset_id})
+
+            dataset_tools.add_to_training_queue(dataset_id, dataset['plugins'], data_for_training, _save_models)
+        
+        else:
+            datasets_repository.update(dataset_id, {'newData': len(data) + dataset['newData']})
 
         return {
             'contents':      new_data,

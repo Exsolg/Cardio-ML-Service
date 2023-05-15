@@ -9,3 +9,6 @@ class FieldNotExistError(Exception):
 
 class ValidationError(Exception):
     pass
+
+class BadRequestError(Exception):
+    pass

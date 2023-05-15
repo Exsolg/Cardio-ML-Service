@@ -9,6 +9,7 @@ from joblib import dump, load
 from uuid import uuid4
 from os.path import exists
 from os import makedirs
+from time import sleep
 
 
 class Test(Plugin):
@@ -41,9 +42,10 @@ class Test(Plugin):
         self.y_test = None
         self.x_train = None
         self.y_train = None
+        self.progress = 0
 
 
-    def train(self, data: list):
+    def train(self, data: list[dict]) -> None:
         data = self._prepare_data(data)
         x_train, x_test, y_train, y_test = train_test_split(data.drop('z', axis=1), data['z'], random_state=1, test_size=0.3)
 
@@ -52,6 +54,10 @@ class Test(Plugin):
 
         self.model = DecisionTreeClassifier(random_state=1)
         self.model.fit(x_train, y_train)
+
+        for _ in range(100):
+            self.progress += 1
+            sleep(1)
 
     def predict(self, data: list[dict]) -> list[dict]:
         samples = self._prepare_samples(data)
@@ -80,6 +86,9 @@ class Test(Plugin):
     def on_load() -> None:
         if not exists('models/test'):
             makedirs('models/test')
+        
+    def get_progress(self) -> int:
+        return self.progress
 
     def _prepare_data(self, data: list) -> DataFrame:
         data = [{

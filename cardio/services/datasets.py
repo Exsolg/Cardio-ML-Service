@@ -1,13 +1,14 @@
 from cardio.tools import plugins as plugin_tools
+from cardio.tools import datasets as dataset_tools
 from cardio.tools.base_plugin import Plugin
 from cardio.repositories import datasets as datasets_repository
+from cardio.repositories import data as data_repository
 from cardio.repositories import models as models_repository
-from cardio.services.errors import NotFoundError, InternalError, ValidationError
+from cardio.services.errors import NotFoundError, InternalError, ValidationError, BadRequestError
 
 from jsonschema import validate, ValidationError as _ValidationError
 from loguru import logger
 from math import ceil
-from datetime import datetime
 
 
 def get(id: str) -> dict:
@@ -101,11 +102,14 @@ def delete(id: str) -> None:
 
 def create(dataset: dict) -> dict:
     try:
+        if dataset['trainingSteps'] < 0:
+            raise BadRequestError(f'Field "trainingSteps" cannot be less than zero')
+
         for name in dataset['plugins']:
             if not plugin_tools.get(name):
                 raise NotFoundError(f'Plugin {name} not found')
             
-        dataset = datasets_repository.get(datasets_repository.create(dataset))
+        dataset = datasets_repository.get(datasets_repository.create({'newData': 0, **dataset}))
 
         plugins = []
         for name in dataset['plugins']:
@@ -124,26 +128,91 @@ def create(dataset: dict) -> dict:
         logger.info(f'NotFoundError: {e}')
         raise e
 
+    except BadRequestError as e:
+        logger.info(f'BadRequestError: {e}')
+        raise e
+
     except Exception as e:
         logger.error(f'Error: {e}')
         raise e
 
 
-def update(id: str, dataset: dict) -> dict:     # ТУТ если меняем плагины, нужно валижировать вю дату
+def update(id: str, dataset: dict) -> dict:
     try:
         _dataset = datasets_repository.get(id)
 
         if not _dataset:
             raise NotFoundError(f'Dataset {id} not found')
 
-        for name in dataset['plugins']:
-            if not plugin_tools.get(name):
-                raise NotFoundError(f'Plugin {name} not found')
+        if 'plugins' in dataset:
+            for name in dataset['plugins']:
+                if not plugin_tools.get(name):
+                    raise NotFoundError(f'Plugin {name} not found')
+            
+            data, _ = data_repository.get_list(
+                skip=0,
+                limit=_dataset['dataCount'],
+                filter={'datasetId': id})
+            
+            for name in dataset['plugins']:
+                plugin = plugin_tools.get(name)
 
+                for d in data:
+                    try:
+                        validate(d['sample'], plugin.scheme_sample)
+                        validate(d['prediction'], plugin.scheme_prediction)
+                    except _ValidationError as e:
+                        raise _ValidationError(f'while processing data {d["_id"]} {e}')
+                
         datasets_repository.update(id, dataset)
-        
-        return datasets_repository.get(id)
     
+        dataset = datasets_repository.get(id)
+
+        plugins = []
+        for name in dataset['plugins']:
+            plugin = plugin_tools.get(name)
+            
+            plugins.append({
+                'name': plugin.__name__,
+                'description': plugin.description,
+            })
+            
+        dataset['plugins'] = plugins
+        
+        return dataset
+    
+    except NotFoundError as e:
+        logger.info(f'NotFoundError: {e}')
+        raise e
+
+    except _ValidationError as e:
+        logger.info(f'ValidationError: {e}')
+        raise ValidationError(e)
+
+    except Exception as e:
+        logger.error(f'Error: {e}')
+        raise InternalError(e)
+
+
+def train(id: str) -> dict:
+    try:
+        dataset = datasets_repository.get(id)
+
+        if not dataset:
+            raise NotFoundError(f'Dataset {id} not found')
+        
+        if dataset['dataCount'] == 0:
+            raise NotFoundError(f'Dataset {id} contains no data')
+        
+        datasets_repository.update(id, {'newData': 0})
+
+        data_for_training, _ = data_repository.get_list(
+            skip=0,
+            limit=dataset['dataCount'],
+            filter={'datasetId': id})
+
+        dataset_tools.add_to_training_queue(id, dataset['plugins'], data_for_training, _save_models)
+
     except NotFoundError as e:
         logger.info(f'NotFoundError: {e}')
         raise e
@@ -160,11 +229,7 @@ def training_status(id: str) -> dict:
         if not _dataset:
             raise NotFoundError(f'Dataset {id} not found')
         
-        return {
-            'plugin':            'None',
-            'progress':          0,
-            'trainingStartDate': datetime.now(),
-        }
+        return dataset_tools.training_status(id)
     
     except NotFoundError as e:
         logger.info(f'NotFoundError: {e}')
@@ -219,3 +284,9 @@ def predict(dataset_id: int, samples: list[dict]) -> list[dict]:
     except Exception as e:
         logger.error(f'Error: {e}')
         raise InternalError(e)
+
+
+def _save_models(models: list) -> None:
+    for m in models:
+        id = models_repository.create(m)
+        logger.info(f'Add new model {id}')

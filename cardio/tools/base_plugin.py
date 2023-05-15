@@ -6,7 +6,7 @@ class Plugin:
     def __init__(self) -> None:
         ...
 
-    def train(self, data: list[dict]):
+    def train(self, data: list[dict]) -> None:
         ...
 
     def predict(self, data: list[dict]) -> list[dict]:
@@ -25,4 +25,7 @@ class Plugin:
         ...
 
     def on_load() -> None:
+        ...
+    
+    def get_progress(self) -> int:
         ...

@@ -1,8 +1,9 @@
 from flask_restx import Resource, Namespace, marshal
 from flask_restx._http import HTTPStatus
+from flask import request
 from loguru import logger
 
-from cardio.services.errors import NotFoundError, ValidationError
+from cardio.services.errors import NotFoundError, ValidationError, BadRequestError
 from cardio.services import datasets as datasets_service
 from cardio.controllers.reqparsers import base as base_reqparsers
 from cardio.controllers.reqparsers import datasets as dataset_reqparsers
@@ -55,6 +56,9 @@ class Dataset(Resource):
 
         except NotFoundError as e:
             return {'message': str(e)}, HTTPStatus.NOT_FOUND
+        
+        except BadRequestError as e:
+            return {'message': str(e)}, HTTPStatus.BAD_REQUEST
 
         except Exception as e:
             logger.debug(f'Error: {e}')
@@ -109,6 +113,9 @@ class Dataset(Resource):
 
         except NotFoundError as e:
             return {'message': str(e)}, HTTPStatus.NOT_FOUND
+
+        except ValidationError as e:
+            return {'message': str(e)}, HTTPStatus.BAD_REQUEST
         
         except Exception as e:
             logger.debug(f'Error: {e}')
@@ -137,7 +144,7 @@ class Dataset(Resource):
 
 @api.route('/<uuid:id>/predict')
 class Model(Resource):
-    @api.doc(description='Model prediction', id='predict_model', params={'id': {'format': 'uuid'}})
+    @api.doc(description='Best model prediction', id='predict_model', params={'id': {'format': 'uuid'}})
     @api.expect(list(model_reqparsers.sample), validate=True)
     @api.response(HTTPStatus.OK, 'Success', model=model_schemes.predictions_list)
     @api.response(HTTPStatus.NOT_FOUND, 'Not Found', model=base_schemes.error)
@@ -147,6 +154,28 @@ class Model(Resource):
             return marshal(datasets_service.predict(str(id), api.payload),
                            model_schemes.predictions_list,
                            skip_none=True), HTTPStatus.OK
+        
+        except NotFoundError as e:
+            return {'message': str(e)}, HTTPStatus.NOT_FOUND
+    
+        except ValidationError as e:
+            return {'message': str(e)}, HTTPStatus.BAD_REQUEST
+        
+        except Exception as e:
+            logger.debug(f'Error: {e}')
+            return {'message': 'Internal Server Error'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@api.route('/<uuid:id>/train')
+class Model(Resource):
+    @api.doc(description='Start training', id='train_model', params={'id': {'format': 'uuid'}})
+    @api.response(HTTPStatus.NO_CONTENT, 'Success')
+    @api.response(HTTPStatus.NOT_FOUND, 'Not Found', model=base_schemes.error)
+    @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', base_schemes.error)
+    def post(self, id):
+        try:
+            datasets_service.train(str(id))
+            return None, HTTPStatus.NO_CONTENT
         
         except NotFoundError as e:
             return {'message': str(e)}, HTTPStatus.NOT_FOUND

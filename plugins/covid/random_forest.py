@@ -82,16 +82,16 @@ class CovidRandomForest(Plugin):
     def __init__(self) -> None:
         ...
 
-    def train(self, data: scheme_train):
+    def train(self, data: list[dict]) -> None:
         ...
 
-    def predict(self, data: scheme_predict) -> float:
+    def predict(self, data: list[dict]) -> list[dict]:
         ...
     
-    def get_params(self,) -> dict:
+    def get_params(self) -> dict:
         ...
     
-    def get_score(self,) -> dict:
+    def get_score(self) -> dict:
         ...
 
     def load_from_file(self, file: str) -> None:
@@ -101,4 +101,7 @@ class CovidRandomForest(Plugin):
         ...
 
     def on_load() -> None:
+        ...
+    
+    def get_progress(self) -> int:
         ...

@@ -4,13 +4,15 @@ from cardio.controllers.schemes.plugins import simple_plugin
 
 
 simple_dataset = Model('simple_dataset', {
-    'id':          fields.String(attribute='_id'),
-    'name':        fields.String,
-    'description': fields.String,
-    'dataCount':   fields.Integer,
-    'modelsCount': fields.Integer,
-    'createdAt':   fields.DateTime,
-    'plugins':     fields.List(fields.String),
+    'id':            fields.String(attribute='_id'),
+    'name':          fields.String,
+    'description':   fields.String,
+    'trainingSteps': fields.Integer,
+    'newData':       fields.Integer,
+    'dataCount':     fields.Integer,
+    'modelsCount':   fields.Integer,
+    'createdAt':     fields.DateTime,
+    'plugins':       fields.List(fields.String),
 })
 
 dataset = simple_dataset.clone('dataset', {
@@ -22,7 +24,10 @@ datasets = page.clone('datasets', {
 })
 
 training_status = Model('training_status', {
-    'plugin':            fields.String,
-    'progress':          fields.Integer,
-    'trainingStartDate': fields.DateTime,
+    'participatesInTraining': fields.Boolean,
+    'numberInQueue':          fields.String,
+    'plugin':                 fields.String,
+    'plugins':                fields.List(fields.String),
+    'progress':               fields.Integer,
+    'trainingStartDate':      fields.DateTime,
 })
