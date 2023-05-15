@@ -1,4 +1,4 @@
-from flask_restx.reqparse import RequestParser, ParseResult
+from flask_restx.reqparse import RequestParser, FileStorage
 from flask_restx.inputs import boolean
 
 
@@ -23,3 +23,6 @@ covid_predict_parser.add_argument('SD',                         type=boolean)
 covid_predict_parser.add_argument('IBS',                        type=boolean)
 covid_predict_parser.add_argument('HOBL',                       type=boolean)
 covid_predict_parser.add_argument('HBP',                        type=boolean)
+
+covid_model_create_parser = RequestParser()
+covid_model_create_parser.add_argument('model', required=True, type=FileStorage, location='files')
