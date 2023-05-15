@@ -17,6 +17,7 @@ def get(id: str) -> dict:
     except errors.NotFoundError as e:
         logger.debug(f'NotFoundError: {e}')
         raise e
+    
     except Exception as e:
         logger.error(f'Error: {e}')
         raise errors.InternalError(e)

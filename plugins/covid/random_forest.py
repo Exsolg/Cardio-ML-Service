@@ -6,7 +6,7 @@ class CovidRandomForest(Plugin):
     Predicting covid-19 patient outcome using random forest method
     '''
 
-    scheme: dict = {
+    scheme_predict: dict = {
         'type': 'object',
         'properties': {
             'sex': {
@@ -77,10 +77,21 @@ class CovidRandomForest(Plugin):
         }
     }
 
+    scheme_train = {}
+
     def __init__(self) -> None:
         ...
 
-    def predict(self, data: scheme) -> float:
+    def train(self, data: scheme_train):
+        ...
+
+    def predict(self, data: scheme_predict) -> float:
+        ...
+    
+    def get_params(self,) -> dict:
+        ...
+    
+    def get_score(self,) -> dict:
         ...
 
     def load_from_file(self, file: str) -> None:

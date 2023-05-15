@@ -17,7 +17,7 @@ def create(model: dict) -> str:
         raise e
 
 
-def delete(id: str):
+def delete(id: str) -> bool:
     try:
         _filters = {'_id': id, 'deleted_at': None}
     

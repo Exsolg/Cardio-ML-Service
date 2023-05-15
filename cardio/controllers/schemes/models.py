@@ -16,7 +16,7 @@ simple_model_schema = Model('simple_model', {
     'method':       fields.String,
     'for':          fields.String,
     'created_at':   fields.DateTime,
-    'score':        fields.List(score_schema, skip_none=True),
+    'score':        fields.List(fields.Nested(score_schema, skip_none=True)),
     'description':  fields.String,
 })
 

@@ -11,7 +11,7 @@ from cardio.controllers.schemes import models as model_schemes
 from cardio.controllers.schemes import base as base_schemes
 
 
-api = Namespace('models')
+api = Namespace('/models')
 api.models[model_schemes.predict_schema.name] = model_schemes.predict_schema
 api.models[model_schemes.simple_model_schema.name] = model_schemes.simple_model_schema
 api.models[model_schemes.models_schema.name] = model_schemes.models_schema
@@ -30,7 +30,7 @@ class Model(Resource):
         try:
             args = base_reqparse.get_list_parser.parse_args()
 
-            return marshal(models_service.get_list(**args),
+            return marshal(models_service.get_list(args),
                            model_schemes.models_schema,
                            skip_none=True), HTTPStatus.OK
         
@@ -79,7 +79,6 @@ class Model(Resource):
     @api.response(HTTPStatus.NOT_FOUND, 'Not Found', model=base_schemes.error_schema)
     @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', base_schemes.error_schema)
     def post(self, id):
-        print('000')
         try:
             args = request.json
             return marshal(models_service.predict(str(id), args),

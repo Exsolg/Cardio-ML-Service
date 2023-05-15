@@ -3,6 +3,7 @@ from flask_pymongo import PyMongo
 from flask_restx import Api
 
 from cardio.controllers.models import api as models_api
+from cardio.controllers.plugins import api as plugins_api
 
 from cardio.repositoryes.repositoryes import init_repositories
 
@@ -22,7 +23,9 @@ def create_app(config):
     db.db = db.cx[config.MONGO_DB_NAME]
     init_repositories(db.db)
     
-    api.add_namespace(models_api, '/models')
+    api.add_namespace(models_api, models_api.name)
+    api.add_namespace(plugins_api, plugins_api.name)
+
     api.init_app(app)
     
     return app
