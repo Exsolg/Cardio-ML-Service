@@ -6,10 +6,11 @@ from cardio.tools.enums import Score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score
+from xgboost import XGBClassifier
 
 import joblib
 import json
-from numpy import nan
+from numpy import nan, linspace
 from pandas import DataFrame, concat
 from uuid import uuid4
 from loguru import logger
@@ -18,7 +19,7 @@ from os import makedirs
 from time import time
 
 
-class CovidRandomForest(Plugin):
+class CovidXGBoost(Plugin):
     description = '''
     Predicting covid-19 patient outcome using random forest method
     '''
@@ -106,7 +107,7 @@ class CovidRandomForest(Plugin):
         'required': ['survived'],
     }
 
-    plugin_dir = 'covid_random_forest'
+    plugin_dir = 'covid_xg_boost'
 
 
     def __init__(self) -> None:
@@ -127,12 +128,13 @@ class CovidRandomForest(Plugin):
         self.x_test = x_test
         self.y_test = y_test
 
-        self.model = grid_search(RandomForestClassifier,
+        self.model = grid_search(XGBClassifier,
                                  {
-                                     'criterion': ['gini', 'entropy'],
-                                     'n_estimators': list(range(1, 21, 2)),
-                                     'max_depth': list(range(5, 51, 2)),
-                                     'min_samples_split': list(range(10, 51, 10)),
+                                     'n_estimators': list(range(20, 161, 20)),
+                                     'max_depth': list(range(5, 51, 4)),
+                                     'min_child_weight': list(range(1, 12, 2)),
+                                     'subsample': linspace(0.3, 1, 3),
+                                     'colsample_bytree': linspace(0.3, 1, 3),
                                      'random_state': [int(time())]
                                  },
                                  lambda model: model.fit(x_train, y_train),
@@ -168,7 +170,7 @@ class CovidRandomForest(Plugin):
 
 
     def save_in_file(self) -> str:
-        path = f'{CovidRandomForest.plugin_dir}/{str(uuid4())}'
+        path = f'{CovidXGBoost.plugin_dir}/{str(uuid4())}'
         dir_path = f'{directory()}/{path}'
 
         makedirs(dir_path)
@@ -182,8 +184,8 @@ class CovidRandomForest(Plugin):
 
 
     def on_load() -> None:
-        if not exists(f'{directory()}/{CovidRandomForest.plugin_dir}'):
-            makedirs(f'{directory()}/{CovidRandomForest.plugin_dir}')
+        if not exists(f'{directory()}/{CovidXGBoost.plugin_dir}'):
+            makedirs(f'{directory()}/{CovidXGBoost.plugin_dir}')
 
 
     def get_progress(self) -> int:

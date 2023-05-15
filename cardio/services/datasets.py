@@ -1,6 +1,7 @@
 from cardio.tools import plugins as plugin_tools
 from cardio.tools import datasets as dataset_tools
 from cardio.tools.base_plugin import Plugin
+from cardio.tools.helpers import сompare_models_quality
 from cardio.repositories import datasets as datasets_repository
 from cardio.repositories import data as data_repository
 from cardio.repositories import models as models_repository
@@ -111,7 +112,11 @@ def create(dataset: dict) -> dict:
         
         # ТУТ Проверять, что схемы плагинов не противоречат друг другу
             
-        dataset = datasets_repository.get(datasets_repository.create({'newData': 0, **dataset}))
+        dataset = datasets_repository.get(datasets_repository.create({
+            'newData': 0,
+            'bestModel': None,
+            **dataset
+        }))
 
         plugins = []
         for name in dataset['plugins']:
@@ -213,7 +218,7 @@ def train(id: str) -> dict:
             limit=dataset['dataCount'],
             filter={'datasetId': id})
 
-        dataset_tools.add_to_training_queue(id, dataset['plugins'], data_for_training, _save_models)
+        dataset_tools.add_to_training_queue(id, dataset['plugins'], data_for_training, _save_model)
 
     except NotFoundError as e:
         logger.info(f'NotFoundError: {e}')
@@ -260,14 +265,14 @@ def predict(dataset_id: int, samples: list[dict]) -> list[dict]:
             raise NotFoundError(f'Plugin {model["plugin"]} not found')
 
         for samle in samples:
-            validate(samle, plugin.scheme_sample)
+            validate(samle['sample'], plugin.scheme_sample)
         
         plugin: Plugin = plugin()
         plugin.load_from_file(model['filePath'])
 
-        predictions = plugin.predict([i['sample'] for i in samples])
+        predictions = plugin.predict(samples)
 
-        return {
+        return {    # ТУТ сделать пагинацию абстрактной
             'contents':      predictions,
             'page':          1,
             'limit':         len(predictions),
@@ -288,7 +293,41 @@ def predict(dataset_id: int, samples: list[dict]) -> list[dict]:
         raise InternalError(e)
 
 
-def _save_models(models: list) -> None:
-    for m in models:
-        id = models_repository.create(m)
-        logger.info(f'Add new model {id}')
+def _save_model(dataset_id: str, plugin: Plugin) -> None:
+
+    dataset = datasets_repository.get(dataset_id)
+
+    if not dataset:
+        raise NotFoundError(f'Dataset {id} not found')
+
+    if not dataset.get('bestModel'):
+        id = models_repository.create({
+            'score': plugin.get_score(),
+            'params': plugin.get_params(),
+            'filePath': plugin.save_in_file(),
+            'plugin': plugin.__class__.__name__,
+            'datasetId': dataset_id
+        })
+
+        datasets_repository.update(dataset_id, {'bestModel': id})
+        logger.info(f'New best model for dataset {dataset_id}: {id}')
+
+        return
+    
+    old_model = models_repository.get(dataset['bestModel'])
+    
+    if (best_model_index := сompare_models_quality([old_model['score'], plugin.get_score()])) >= 0:
+        if best_model_index == 1:
+            id = models_repository.create({
+            'score': plugin.get_score(),
+            'params': plugin.get_params(),
+            'filePath': plugin.save_in_file(),
+            'plugin': plugin.__class__.__name__,
+            'datasetId': dataset_id
+            })
+
+            datasets_repository.update(dataset_id, {'bestModel': id})
+            logger.info(f'New best model for dataset {dataset_id}: {id}')
+    
+    else:
+        logger.warning(f'Failed to determine the best model for dataset {dataset_id}')

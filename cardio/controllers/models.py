@@ -83,7 +83,12 @@ class Model(Resource):
     @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal Server Error', base_schemes.error)
     def post(self, id, modelId):
         try:
-            return marshal(models_service.predict(str(id), str(modelId), api.payload),
+            # ТУТ Убрать этот ужас. Тут из json удаляются поля с None
+            data = [{
+                'sample': {k: v for k, v in data['sample'].items() if v is not None},
+                } for data in api.payload]
+
+            return marshal(models_service.predict(str(id), str(modelId), data),
                            model_schemes.predictions_list,
                            skip_none=True), HTTPStatus.OK
         

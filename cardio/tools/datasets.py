@@ -1,4 +1,5 @@
 from cardio.tools import plugins as plugin_tools
+from cardio.tools.helpers import сompare_models_quality
 from cardio.tools.base_plugin import Plugin
 
 from threading import Thread
@@ -10,7 +11,7 @@ _training_queue: list['TrainingThread'] = []
 _training_thread: 'TrainingThread' = None
 
 
-def add_to_training_queue(dataset_id: str, plugins: list[str], data: list[dict], save_models) -> None:
+def add_to_training_queue(dataset_id: str, plugins: list[str], data: list[dict], save_model_function) -> None:
     global _training_thread
     global _training_queue
 
@@ -18,7 +19,7 @@ def add_to_training_queue(dataset_id: str, plugins: list[str], data: list[dict],
         index = [i.dataset_id for i in _training_queue].index(dataset_id)
         _training_queue.pop(index)
 
-    _training_queue.append(TrainingThread(dataset_id, plugins, data, save_models))
+    _training_queue.append(TrainingThread(dataset_id, plugins, data, save_model_function))
 
     if _training_thread is None:
         _training_thread = _training_queue.pop(0)
@@ -54,7 +55,7 @@ def training_status(dataset_id: str) -> dict:
 
 
 class TrainingThread(Thread):
-    def __init__(self, dataset_id: str, plugins_list: list[str], data: list[dict], save_models) -> None:
+    def __init__(self, dataset_id: str, plugins_list: list[str], data: list[dict], save_model_function) -> None:
         super().__init__(daemon=True)
 
         plugins: list[Plugin] = []
@@ -72,7 +73,7 @@ class TrainingThread(Thread):
         self.dataset_id: str =       dataset_id
         self.data: list[dict] =      data
         self.start_date: datetime =  None
-        self.save_models =           save_models
+        self.save_model_function =   save_model_function
 
     def get_progress(self) -> int:
         return self.plugin.get_progress()
@@ -82,22 +83,21 @@ class TrainingThread(Thread):
             logger.info(f'Starting training for dataset {self.dataset_id}. Data count: {len(self.data)}')
             self.start_date = datetime.utcnow()
 
-            models: list[dict] = []
+            learning_plugins: list[Plugin] = []
+
             for p in self.plugins:
                 plugin: Plugin = p()
                 self.plugin = plugin
 
                 plugin.train(self.data)
 
-                models.append({
-                    'score': plugin.get_score(),
-                    'params': plugin.get_params(),
-                    'filePath': plugin.save_in_file(),
-                    'plugin': p.__name__,
-                    'datasetId': self.dataset_id
-                })
+                learning_plugins.append(plugin)
+
+            if (best_plugin_index := сompare_models_quality([i.get_score() for i in learning_plugins])) >= 0:
+                self.save_model_function(self.dataset_id, learning_plugins[best_plugin_index])
             
-            self.save_models(models)
+            else:
+                logger.warning(f'Failed to determine the best model for dataset {self.dataset_id}')
 
             logger.info(f'End training for dataset {self.dataset_id}')
 

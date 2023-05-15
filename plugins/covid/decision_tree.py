@@ -1,6 +1,7 @@
 from cardio.tools.base_plugin import Plugin
 from cardio.tools.model_files import directory
 from cardio.tools.helpers import grid_search
+from cardio.tools.enums import Score
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
@@ -8,7 +9,8 @@ from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_sc
 
 import joblib
 import json
-from pandas import DataFrame, get_dummies
+from numpy import nan
+from pandas import DataFrame, concat
 from uuid import uuid4
 from loguru import logger
 from os.path import exists
@@ -118,7 +120,6 @@ class CovidDecisionTree(Plugin):
     def train(self, data: list[dict]) -> None:
         data: DataFrame = self._prepare_data(data)
 
-        logger.info(data)
         logger.info(list(data.columns))
 
         x_train, x_test, y_train, y_test = train_test_split(data.drop('survived', axis=1), data['survived'], random_state=1, test_size=0.3)
@@ -133,7 +134,8 @@ class CovidDecisionTree(Plugin):
                                      'random_state': [int(time())]
                                  },
                                  lambda model: model.fit(x_train, y_train),
-                                 lambda model: f1_score(self.y_test, model.predict(self.x_test), average='weighted')
+                                 lambda model: f1_score(self.y_test, model.predict(self.x_test), average='weighted'),
+                                 self._set_progress
                                  )
 
 
@@ -149,17 +151,17 @@ class CovidDecisionTree(Plugin):
     
     def get_score(self) -> dict:
         return {
-            'f1':           f1_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
-            'recall':       recall_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
-            'precision':    precision_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
-            'accuracy':     accuracy_score(self.y_test, self.model.predict(self.x_test)),
+            Score.F1:           f1_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
+            Score.RECALL:       recall_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
+            Score.PRECISION:    precision_score(self.y_test, self.model.predict(self.x_test), average='weighted'),
+            Score.ACCURACY:     accuracy_score(self.y_test, self.model.predict(self.x_test)),
             }
 
 
     def load_from_file(self, path: str) -> None:
         self.model = joblib.load(f'{directory()}/{path}/model.joblib')
 
-        with open(f'{directory()}/{path}/medians.joblib', 'r', encoding='utf-8') as f:
+        with open(f'{directory()}/{path}/medians.json', 'r', encoding='utf-8') as f:
             self.medians = json.load(f)
 
 
@@ -185,10 +187,14 @@ class CovidDecisionTree(Plugin):
     def get_progress(self) -> int:
         return self.progress
 
+    def _set_progress(self, progress: int) -> None:
+        self.progress = progress
+
 
     def _prepare_data(self, data: list[dict]) -> DataFrame:
-        # ТУТ возможно, может быть перепутано местами из за словаря
-        data: DataFrame = DataFrame([{**i['sample'], **i['prediction']} for i in data])
+        df = DataFrame(columns=list(self.scheme_sample['properties'].keys()) + list(self.scheme_prediction['properties'].keys()))
+
+        data: DataFrame = concat([df, DataFrame([{**i['sample'], **i['prediction']} for i in data])])
 
         data.loc[data.sex == 'male', 'sex'] = 0.
         data.loc[data.sex == 'female', 'sex'] = 1.
@@ -198,7 +204,7 @@ class CovidDecisionTree(Plugin):
         data.loc[data['severity'] == 'severe', 'severity'] = 2.0
 
         data = data.astype('float64')
-        self.medians = dict(data.median())
+        self.medians = dict(data.median().replace({nan: None}))
         data = data.fillna(self.medians)
 
         # ТУТ если остались пустые ячейки, заполнить их чем нибудь
@@ -206,4 +212,17 @@ class CovidDecisionTree(Plugin):
         return data
 
     def _prepare_samples(self, data: list[dict]) -> DataFrame:
-        return DataFrame()
+        df = DataFrame(columns=list(self.scheme_sample['properties'].keys()))
+
+        data: DataFrame = concat([df, DataFrame([{**i['sample']} for i in data])])
+
+        data.loc[data.sex == 'male', 'sex'] = 0.
+        data.loc[data.sex == 'female', 'sex'] = 1.
+
+        data.loc[data['severity'] == 'light',  'severity'] = 0.0
+        data.loc[data['severity'] == 'medium', 'severity'] = 1.0
+        data.loc[data['severity'] == 'severe', 'severity'] = 2.0
+
+        data = data.fillna(self.medians)
+
+        return data
