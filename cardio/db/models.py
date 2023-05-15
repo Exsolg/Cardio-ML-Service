@@ -1,10 +1,11 @@
-from cardio.db.db import db
+from cardio.db.repositoryes import get_models_repository
 
 
-class Model:
-    collection_name = 'models'
+def get(id: str) -> dict:
+    model_repo = get_models_repository()
+    return model_repo.find_one({'_id': id})
 
-    @staticmethod
-    def get(id: str) -> dict:
-        print('GET:', db)
-        return db[Model.collection_name].find_one({'_id': id})
+
+def get_list() -> list:
+    model_repo = get_models_repository()
+    return list(model_repo.find())

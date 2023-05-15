@@ -5,26 +5,25 @@ from flask_restx import Api
 from cardio.api.cabs import cabs_api
 from cardio.api.covid import covid_api
 
-from cardio.db.db import init_db
+from cardio.db.repositoryes import init_repositories
 
-
-api = Api(prefix='/v1')
-db = PyMongo()
 
 def create_app(config):
     app = Flask(__name__)
+    db = PyMongo()
+    api = Api(prefix='/v1')
     
-    app.config['MONGO_URI'] = f'mongodb://{config.MONGO_USER}:{config.MONGO_PASSWORD}@{config.MONGO_HOST}:{config.MONGO_PORT}/{config.MONGO_DB_NAME}'
+    app.config['MONGO_URI'] = f'mongodb://{config.MONGO_USER}:{config.MONGO_PASSWORD}@{config.MONGO_HOST}:{config.MONGO_PORT}/?authMechanism=DEFAULT'
     app.config['SECRET_KEY'] = config.SECRET_KEY
-    app.config['DEBUG'] = config.DEBUG
+
+    print(app.config['MONGO_URI'])
+
+    db.init_app(app)
+    db.db = db.cx['cardio']
+    init_repositories(db.db)
 
     api.add_namespace(cabs_api, '/cabs')
     api.add_namespace(covid_api, '/covid')
-
     api.init_app(app)
-    db.init_app(app)
-
-    print('III:', app.config['MONGO_URI'])
-    init_db(db.db)
     
     return app
