@@ -2,59 +2,58 @@ from cardio.db.repositoryes import get_models_repository
 from cardio.db import enums
 from uuid import uuid4
 from datetime import datetime
+from loguru import logger
 
 
 def create(model: dict, _for: enums.For) -> str:
-    model['_id'] = str(uuid4())
-    model['for'] = _for
-    model['create_date'] = datetime.utcnow()
-    model['deleted'] = False
-    model['delete_date'] = None
-
     try:
-        model_repo = get_models_repository()
-        return model_repo.insert_one(model).inserted_id
+        model['_id'] = str(uuid4())
+        model['for'] = _for
+        model['created_at'] = datetime.utcnow()
+
+        return get_models_repository().insert_one(model).inserted_id
+    
     except Exception as e:
-        return None
+        logger.error(f'Error: {e}')
+        raise e
 
 
 def delete(id: str, _for: enums.For = None):
-    filters = {'_id': id}
-
-    if _for:
-        filters['for'] = _for
-    
-    update = {'$set': {'deleted': True, 'delete_date': datetime.utcnow()}}
-
     try:
-        model_repo = get_models_repository()
-        return model_repo.update_one(filters, update).matched_count
+        filters = {'_id': id, 'deleted_at': None}
+        if _for:
+            filters['for'] = _for
+    
+        update = {'$set': {'deleted_at': datetime.utcnow()}}
+
+        return True if get_models_repository().update_one(filters, update).modified_count else None
+    
     except Exception as e:
-        return None
+        logger.error(f'Error: {e}')
+        raise e
 
 
 def get(id: str, _for: enums.For = None) -> dict:
-    filters = {'_id': id}
-
+    filters = {'_id': id, 'deleted_at': None}
     if _for:
         filters['for'] = _for
 
     try:
-        model_repo = get_models_repository()
-        return model_repo.find_one(filters)
+        return get_models_repository().find_one(filters)
+    
     except Exception as e:
-        return None
+        logger.error(f'Error: {e}')
+        raise e
 
 
 def get_list(_for: enums.For = None) -> list:
-    filters = {}
-
+    filters = {'deleted_at': None}
     if _for:
         filters['for'] = _for
 
     try:
-        model_repo = get_models_repository()
-        return list(model_repo.find(filters))
-    except Exception as e:
-        return None
+        return list(get_models_repository().find(filters))
     
+    except Exception as e:
+        logger.error(f'Error: {e}')
+        raise e
