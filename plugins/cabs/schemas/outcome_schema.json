@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "properties": {
+        "MI": {
+            "type": "boolean"
+        },
+        "CI": {
+            "type": "boolean"
+        },
+        "insultOutcome": {
+            "type": "boolean"
+        },
+        "death": {
+            "type": "boolean"
+        },
+        "comb": {
+            "type": "boolean"
+        }
+    },
+    "required": ["MI", "CI", "insultOutcome", "death", "comb"]
+}

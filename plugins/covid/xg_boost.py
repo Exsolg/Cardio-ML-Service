@@ -21,7 +21,7 @@ from time import time
 
 class CovidXGBoost(Plugin):
     description = '''
-    Predicting covid-19 patient outcome using random forest method
+    Predicting covid-19 patient outcome using XGBoost method
     '''
 
     scheme_sample: dict = {
@@ -111,7 +111,7 @@ class CovidXGBoost(Plugin):
 
 
     def __init__(self) -> None:
-        self.model: RandomForestClassifier = None
+        self.model: XGBClassifier = None
         self.x_test =  None
         self.y_test =  None
         self.medians = {}

@@ -1,0 +1,196 @@
+{
+    "type": "object",
+    "properties": {
+        "cabsKind": {
+            "type": "boolean"
+        },
+        "sex": {
+            "type": "string",
+            "enum": ["male", "female"]
+        },
+        "age": {
+            "type": "integer"
+        },
+        "BMI": {
+            "type": "number"
+        },
+        "syntaxScore": {
+            "type": "number"
+        },
+        "arterialHypertension": {
+            "type": "boolean"
+        },
+        "diabetes": {
+            "type": "boolean"
+        },
+        "obesity": {
+            "type": "boolean"
+        },
+        "smoking": {
+            "type": "boolean"
+        },
+        "heredity": {
+            "type": "boolean"
+        },
+        "dyslipidemia": {
+            "type": "boolean"
+        },
+        "asthma": {
+            "type": "boolean"
+        },
+        "postinfarctionCardiosclerosis": {
+            "type": "boolean"
+        },
+        "atrialFibrillation": {
+            "type": "boolean"
+        },
+        "chronicRenalInsufficiency": {
+            "type": "boolean"
+        },
+        "pepticUlcer": {
+            "type": "boolean"
+        },
+        "thyroidDisorders": {
+            "type": "boolean"
+        },
+        "varicoseVein": {
+            "type": "boolean"
+        },
+        "insult": {
+            "type": "boolean"
+        },
+        "lowerLimbIschemia": {
+            "type": "boolean"
+        },
+        "anginaFuncClass": {
+            "type": "string"
+        },
+        "chronicHeartFailureFuncClass": {
+            "type": "string"
+        },
+        "leftVentricularEjectionFraction": {
+            "type": "number"
+        },
+        "interventricularSeptum": {
+            "type": "number"
+        },
+        "euroScoreII": {
+            "type": "number"
+        },
+        "artificialCirculation": {
+            "type": "boolean"
+        },
+        "artificialCirculationTime": {
+            "type": "number"
+        },
+        "aorticConstrictionTime": {
+            "type": "number"
+        },
+        "bodyTemperature": {
+            "type": "number"
+        },
+        "cardioplegiaNumber": {
+            "type": "string"
+        },
+        "ventriculoplastLV": {
+            "type": "boolean"
+        },
+        "revascularizationIdx": {
+            "type": "string"
+        },
+        "yCoronaryBypass": {
+            "type": "boolean"
+        },
+        "litaDischarge": {
+            "type": "string"
+        },
+        "ritaDischarge": {
+            "type": "string"
+        },
+        "radialArteryUsage": {
+            "type": "boolean"
+        },
+        "poplitealArteryUsage": {
+            "type": "boolean"
+        },
+        "bloodLoss": {
+            "type": "number"
+        },
+        "artificialVentTime": {
+            "type": "number"
+        },
+        "inotropicSupport": {
+            "type": "boolean"
+        },
+        "pneumonia": {
+            "type": "boolean"
+        },
+        "heartFailure": {
+            "type": "boolean"
+        },
+        "reanimationAtrialFibrillation": {
+            "type": "boolean"
+        },
+        "pleuralEffusion": {
+            "type": "boolean"
+        },
+        "hydropericardium": {
+            "type": "boolean"
+        },
+        "pneumothorax": {
+            "type": "boolean"
+        },
+        "sternalComplications": {
+            "type": "boolean"
+        },
+        "calciumChannelAntagonists": {
+            "type": "boolean"
+        },
+        "angiotensinInhibitors": {
+            "type": "boolean"
+        },
+        "spironolactone": {
+            "type": "boolean"
+        },
+        "diuretics": {
+            "type": "boolean"
+        },
+        "cordarone": {
+            "type": "boolean"
+        },
+        "hospitalizationDuration": {
+            "type": "number"
+        },
+        "carotidEndarterectomy": {
+            "type": "boolean"
+        },
+        "lowerLimbSurgery": {
+            "type": "boolean"
+        },
+        "antiaggregants": {
+            "type": "boolean"
+        },
+        "anticoagulants": {
+            "type": "boolean"
+        },
+        "betaAB": {
+            "type": "boolean"
+        },
+        "postCalciumChannelAntagonists": {
+            "type": "boolean"
+        },
+        "postAngiotensinInhibitors": {
+            "type": "boolean"
+        },
+        "angiotensinAntagonists": {
+            "type": "boolean"
+        },
+        "postDiuretics": {
+            "type": "boolean"
+        },
+        "statins": {
+            "type": "boolean"
+        }
+    },
+    "required": ["sex", "age", "BMI"]
+}
