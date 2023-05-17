@@ -133,9 +133,9 @@ class CabsRandomForest(Plugin):
         df = DataFrame(columns=list(self.scheme_sample['properties'].keys()) + list(self.scheme_prediction['properties'].keys()))
 
         data: DataFrame = concat([df, DataFrame([
-                {k: v for k, v in i['sample'].items() if k in sample_keys} | {k: v for k, v in i['prediction'].items() if k in prediction_keys}
-                for i in data
-            ])])
+            {k: v for k, v in i['sample'].items() if k in sample_keys} | {k: v for k, v in i['prediction'].items() if k in prediction_keys}
+            for i in data
+        ])])
 
         data.loc[data.sex == 'male',   'sex'] = 0.
         data.loc[data.sex == 'female', 'sex'] = 1.
@@ -162,10 +162,15 @@ class CabsRandomForest(Plugin):
         return data
 
     def _prepare_samples(self, data: list[dict]) -> DataFrame:
-        df = DataFrame(columns=list(self.scheme_sample['properties'].keys()))
+        sample_keys = self.scheme_sample['properties'].keys()
 
-        data: DataFrame = concat([df, DataFrame([{**i['sample']} for i in data])])
+        df = DataFrame(columns=list(sample_keys))
 
+        data: DataFrame = concat([df, DataFrame([
+                {k: v for k, v in i['sample'].items() if k in sample_keys}
+                for i in data
+            ])])
+        
         data.loc[data.sex == 'male',   'sex'] = 0.
         data.loc[data.sex == 'female', 'sex'] = 1.
 
