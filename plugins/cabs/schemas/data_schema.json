@@ -192,5 +192,5 @@
             "type": "boolean"
         }
     },
-    "required": ["sex", "age", "BMI"]
+    "required": ["sex", "age", "BMI", "angiotensinInhibitors"]
 }
