@@ -2,20 +2,20 @@ from cardio.tools.base_plugin import Plugin
 from os import walk
 from os.path import splitext, join
 from loguru import logger
-import jsonschema
-
-jsonschema.validate
 
 
-_plugins: dict[Plugin] = {}
+_plugins: dict[str, Plugin] = {}
 
 
-def get(name: str) -> Plugin:
+def get(name: str) -> Plugin | None:
     return _plugins.get(name)
 
 
-def gelt_list(skip: int = None, limit: int = None) -> list[Plugin]:
+def gelt_list(skip: int = None, limit: int = None, name: str = None) -> (list[Plugin], int):
     plugins = list(sorted([i for i in _plugins.values()], key=lambda x: x.__name__))
+
+    if name is str:
+        plugins = [i for i in plugins if name in i.__name__]
 
     if skip:
         plugins = plugins[skip:]

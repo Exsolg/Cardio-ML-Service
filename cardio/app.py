@@ -1,42 +1,35 @@
-from flask import Flask
-from flask_pymongo import PyMongo
-from flask_restx import Api
+# from pymongo import MongoClient
+from fastapi import FastAPI
 from loguru import logger
 
-from cardio.controllers.models import api as models_api
-from cardio.controllers.plugins import api as plugins_api
-from cardio.controllers.datasets import api as datasets_api
-from cardio.controllers.data import api as data_api
-from cardio.repositories.repositories import init as init_repositories
+from cardio.controllers.utils.responses import INTERNAL_SERVER_ERROR
+from cardio.controllers.utils.exception_handlers import not_found_handler, bad_request_handler, internal_server_error_handler
+from cardio.controllers.plugins import plugins_api
+from cardio.services.errors import NotFoundError, BadRequestError, InternalError
+# from cardio.repositories.repositories import init as init_repositories
 from cardio.tools.plugins import init as init_plugins
-from cardio.tools.model_files import init as init_model_files
+# from cardio.tools.model_files import init as init_model_files
 
 from config import Config
 
 
-def create_app(config: Config):
-    app = Flask(__name__)
-    db = PyMongo()
-    api = Api(prefix='/v1',
-              version='2.2.2',
-              title='Cardio ML API',
-              description='The ML API for the Cardio Center project')
+def create_app(config: Config) -> FastAPI:
+    # db = MongoClient()
+
+    global_api = FastAPI(
+        debug=config.DEBUG,
+        docs_url=None,
+        redoc_url=None,
+    )
+
+    _init_routes(global_api, config)
     
-    app.config['MONGO_URI'] = f'mongodb://{config.MONGO_USER}:{config.MONGO_PASSWORD}@{config.MONGO_HOST}:{config.MONGO_PORT}/?authMechanism=DEFAULT'
-    app.config['SECRET_KEY'] = config.SECRET_KEY
+    # app.config['MONGO_URI'] = f'mongodb://{config.MONGO_USER}:{config.MONGO_PASSWORD}@{config.MONGO_HOST}:{config.MONGO_PORT}/?authMechanism=DEFAULT'
+    # app.config['SECRET_KEY'] = config.SECRET_KEY
 
     logger.info('Repositories initialization...')
 
-    db.init_app(app)
-    db.db = db.cx[config.MONGO_DB_NAME]
-    init_repositories(db.db)
-    
-    logger.info('API initialization...')
-
-    api.add_namespace(models_api, models_api.name)
-    api.add_namespace(plugins_api, plugins_api.name)
-    api.add_namespace(datasets_api, datasets_api.name)
-    api.add_namespace(data_api, data_api.name)
+    # init_repositories(db.db)
 
     logger.info('Plugins initialization...')
 
@@ -44,8 +37,32 @@ def create_app(config: Config):
 
     logger.info('Models initialization...')
 
-    init_model_files(config.MODELS_DIR)
-
-    api.init_app(app)
+    # init_model_files(config.MODELS_DIR)
     
-    return app
+    return global_api
+
+
+def _init_routes(global_api: FastAPI, config: Config):
+    logger.info('Routes initialization...')
+
+    api_v1 = FastAPI(
+        debug=config.DEBUG,
+        version=config.VERSION,
+        title=f'{config.TITLE} V1',
+        summary=config.SUMMARY,
+        description=config.DESCRIPTION,
+        docs_url='/openapi' if config.OPENAPI_IS_VISIBLE else None,
+        redoc_url=None,
+        responses=INTERNAL_SERVER_ERROR,
+    )
+
+    api_v1.add_exception_handler(NotFoundError, not_found_handler)
+    api_v1.add_exception_handler(BadRequestError, bad_request_handler)
+    api_v1.add_exception_handler(InternalError, internal_server_error_handler)
+
+    api_v1.include_router(plugins_api)
+    
+    global_api.mount(f'{config.PREFIX}/v1', api_v1)
+
+
+

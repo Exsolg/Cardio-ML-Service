@@ -3,7 +3,7 @@ from flask_restx._http import HTTPStatus
 from loguru import logger
 
 from cardio.services.errors import NotFoundError, ValidationError
-from cardio.services import models as models_service
+from cardio.services import lm_models as models_service
 from cardio.controllers.reqparsers import base as base_reqparsers
 from cardio.controllers.reqparsers import models as model_reqparsers
 from cardio.controllers.schemes import models as model_schemes

@@ -1,52 +1,49 @@
 from cardio.services.errors import NotFoundError, InternalError
+from cardio.services.models.plugins import Plugin, PluginsPage, PluginsFilter, SimplePlugin
 from cardio.tools import plugins as plugin_tools
 
 from math import ceil
 from loguru import logger
 
 
-def get_list(filter: dict) -> list[dict]:
+def get_list(filter: PluginsFilter) -> PluginsPage:
     try:
-        page =  filter.pop('page')
-        limit = filter.pop('limit')
+        skip = (filter.page - 1) * filter.limit
 
-        page =  page  if page  >= 1 else 1
-        limit = limit if limit >= 1 else 10
+        plugins, total = plugin_tools.gelt_list(skip, filter.limit, filter.name)
 
-        skip = (page - 1) * limit
-
-        plugins, total = plugin_tools.gelt_list(skip, limit)
-
-        return {
-            'contents': [{
-                'name': p.__name__,
-                'description': p.description,
-            } for p in plugins],
-            'page':          page,
-            'limit':         limit,
-            'totalPages':    ceil(total / limit),
-            'totalElements': total
-        }
+        return PluginsPage(
+            page=filter.page,
+            limit=filter.limit,
+            total_pages=ceil(total / filter.limit),
+            total_elements=total,
+            elements=[
+                SimplePlugin(
+                    name=plugin.__name__,
+                    description=plugin.description,
+                )
+                for plugin in plugins
+            ]
+        )
     
     except Exception as e:
         logger.error(f'Error: {e}')
         raise InternalError(e)
 
 
-def get(name: str) -> dict:
+def get(name: str) -> Plugin:
     try:
         plugin = plugin_tools.get(name)
 
         if not plugin:
             raise NotFoundError(f'Plugin {name} not found')
-
-        if plugin:
-            return {
-                'name':              plugin.__name__,
-                'description':       plugin.description,
-                'shchemaPrediction': plugin.scheme_prediction,
-                'shchemaSample':     plugin.scheme_sample,
-            }
+        
+        return Plugin(
+            name=plugin.__name_,
+            description=plugin.description,
+            shchema_sample=plugin.scheme_sample,
+            shchema_prediction=plugin.scheme_prediction,
+        )
 
     except NotFoundError as e:
         logger.info(f'NotFoundError: {e}')

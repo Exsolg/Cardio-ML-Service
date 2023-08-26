@@ -1,7 +1,7 @@
 class Plugin:
-    description = ''
-    scheme_sample: dict = {}
-    scheme_prediction: dict = {}
+    description: str | None = None
+    scheme_sample: dict | None = None
+    scheme_prediction: dict | None = None
 
     def __init__(self) -> None:
         ...
